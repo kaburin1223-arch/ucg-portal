@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UCG Portal</title>
+<style>
+:root{--bg:#081018;--card:#121d2b;--line:#24364d;--text:#e7f1ff;--muted:#95abc4;--acc:#4dc4ff;--acc2:#ff8a47;--ok:#64d38a;}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans JP',sans-serif;background:linear-gradient(180deg,#081018,#0d1520 35%,#111a26);color:var(--text)}
+a{color:inherit}.wrap{max-width:1100px;margin:0 auto;padding:24px}.hero{padding:28px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(135deg,rgba(77,196,255,.14),rgba(255,138,71,.10),rgba(255,255,255,.02));box-shadow:0 14px 40px rgba(0,0,0,.25)}
+.hero h1{margin:0 0 8px;font-size:32px}.hero p{margin:0;color:var(--muted);line-height:1.7}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}.card h2{margin:0 0 10px;font-size:20px}.card p{margin:0 0 14px;color:var(--muted);line-height:1.7}.btns{display:flex;gap:10px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:12px;border:1px solid var(--line);text-decoration:none;font-weight:700;background:#172433;cursor:pointer;color:var(--text)}.btn.primary{background:linear-gradient(135deg,var(--acc),#2699d5);color:#04121b;border-color:#2fa9e8}.btn.alt{background:linear-gradient(135deg,var(--acc2),#d46529);color:#210e04;border-color:#df7a41}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}.stat .k{color:var(--muted);font-size:12px}.stat .v{margin-top:6px;font-size:28px;font-weight:800}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.panel{margin-top:18px}.log{white-space:pre-wrap;background:#0a1119;border:1px solid var(--line);border-radius:16px;padding:14px;color:#bfd5ef;line-height:1.6;min-height:100px}.small{font-size:12px;color:var(--muted)}
+@media (max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:26px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <h1>UCG ポータル</h1>
+    <p>UIは各ツールのまま維持しつつ、内部では共通の <strong>deck_id</strong> と v2 バックアップを共有する入口です。GitHub Pages では同一リポジトリ配下に置く前提で、同一オリジンの localStorage を使って連携します。</p>
+    <div class="toolbar">
+      <a class="btn primary" href="builder/index.html">デッキビルダー＆シミュレータ</a>
+      <a class="btn alt" href="records/index.html">戦績記録ツール</a>
+      <button class="btn" onclick="exportPortalBackup()">全体バックアップ出力</button>
+      <button class="btn" onclick="triggerImport()">全体バックアップ復元</button>
+      <button class="btn" onclick="migrateLegacy()">既存データを同期</button>
+    </div>
+    <div class="small" style="margin-top:12px">推奨運用: まず「既存データを同期」→ 各ツール確認 → 「全体バックアップ出力」</div>
+  </section>
+
+  <section class="stats" id="stats"></section>
+
+  <section class="grid panel">
+    <article class="card">
+      <h2>データ状態</h2>
+      <p>builder 側の保存済みデッキと records 側の戦績をまとめて確認します。旧形式バックアップを読み込んだ場合も、ここで v2 へ寄せた件数を確認できます。</p>
+      <div class="log" id="summary"></div>
+    </article>
+    <article class="card">
+      <h2>推奨リポジトリ構成</h2>
+      <div class="log">/
+├─ index.html               ← このポータル
+├─ builder/
+│  └─ index.html            ← デッキビルダー＆シミュレータ
+├─ records/
+│  └─ index.html            ← 戦績記録
+└─ README_GitHubPages.md    ← 構成と公開手順</div>
+    </article>
+  </section>
+  <input type="file" id="import-file" accept=".json" style="display:none">
+</div>
+<script>
+const PORTAL_KEY='ucg_portal_data_v2';
+const LEGACY_DECK_KEY='ucg_saved_decks';
+const LEGACY_RECORD_KEY='ultraman_v5';
+function safeJsonParse(s,fallback){ try{return JSON.parse(s);}catch(e){return fallback;} }
+function blankPortal(){ return {version:2, exportedAt:null, app:'UCG Portal', decks:[], records:[], practiceLogs:[], deckNotes:[], meta:{}}; }
+function normalizeDeck(d){ if(!d) return null; const cards=Array.isArray(d.cards)?d.cards.map(c=>({card_id:String(c.card_id??c.id??''), quantity:Number(c.quantity??c.qty??1)||1})).filter(c=>c.card_id):[]; const now=new Date().toISOString(); return {deck_id:String(d.deck_id||('deck_'+Date.now()+'_'+Math.random().toString(36).slice(2,7))), deck_name:String(d.deck_name||d.name||'名称未設定'), created_at:d.created_at||now, updated_at:d.updated_at||now, total:Number(d.total)||cards.reduce((a,c)=>a+c.quantity,0), cards, source:d.source||'builder', tags:Array.isArray(d.tags)?d.tags:[], note:typeof d.note==='string'?d.note:''}; }
+function normalizeRecord(r,decks){ const deckName=(r.myDeck && String(r.myDeck)) || ''; const deckHit=(decks||[]).find(d=>d.deck_name===deckName || d.deck_id===r.myDeckId); return {id:String(r.id||('record_'+Date.now()+'_'+Math.random().toString(36).slice(2,7))), date:r.date||new Date().toISOString().slice(0,10), ts:r.ts||new Date().toISOString(), result:r.result||'win', turn:r.turn||'unknown', myDeckId:r.myDeckId || (deckHit?deckHit.deck_id:''), myDeck: deckName || (deckHit?deckHit.deck_name:''), oppDeck:r.oppDeck||'', oppPlayer:r.oppPlayer||'不明', tournamentType:r.tournamentType||'', memo:r.memo||'', source:r.source||'match_record'}; }
+function readPortal(){ const raw=safeJsonParse(localStorage.getItem(PORTAL_KEY)||'null', null); if(raw && raw.version===2 && Array.isArray(raw.decks) && Array.isArray(raw.records)) return raw; return blankPortal(); }
+function writePortal(data){ localStorage.setItem(PORTAL_KEY, JSON.stringify(data)); }
+function mergeUniqueDecks(list){ const map=new Map(); (list||[]).forEach(d=>{ const n=normalizeDeck(d); if(n && !map.has(n.deck_id)) map.set(n.deck_id,n); }); return Array.from(map.values()); }
+function buildPortalFromLegacy(){
+  const portal=readPortal();
+  const legacyDecks=safeJsonParse(localStorage.getItem(LEGACY_DECK_KEY)||'[]', []);
+  const legacyRecordState=safeJsonParse(localStorage.getItem(LEGACY_RECORD_KEY)||'null', null) || {decks:[],records:[]};
+  const recordDeckNames=(legacyRecordState.decks||[]).map(function(d){ return {deck_name:(typeof d==='string'?d:(d&&d.name)||''), cards:[]}; }).filter(function(d){ return d.deck_name; });
+  const decks=mergeUniqueDecks([].concat(portal.decks||[], legacyDecks, recordDeckNames));
+  const records=(legacyRecordState.records||[]).map(function(r){ return normalizeRecord(r,decks); });
+  return Object.assign({}, portal, {version:2, app:'UCG Portal', decks:decks, records:records, exportedAt:new Date().toISOString(), practiceLogs:Array.isArray(portal.practiceLogs)?portal.practiceLogs:[], deckNotes:Array.isArray(portal.deckNotes)?portal.deckNotes:[], meta:portal.meta||{}});
+}
+function render(){
+  const p=buildPortalFromLegacy();
+  const linked=p.records.filter(function(r){ return r.myDeckId; }).length;
+  document.getElementById('stats').innerHTML=''
+    + '<div class="stat"><div class="k">保存済みデッキ</div><div class="v">'+p.decks.length+'</div></div>'
+    + '<div class="stat"><div class="k">戦績件数</div><div class="v">'+p.records.length+'</div></div>'
+    + '<div class="stat"><div class="k">deck_id 紐付済み</div><div class="v">'+linked+'</div></div>'
+    + '<div class="stat"><div class="k">最終同期</div><div class="v" style="font-size:16px">'+(p.exportedAt?new Date(p.exportedAt).toLocaleString('ja-JP'):'未同期')+'</div></div>';
+  const recentDecks=p.decks.slice(0,5).map(function(d){ return '- '+d.deck_name+' ('+d.deck_id+')'; }).join('
+') || 'なし';
+  const recentRecords=p.records.slice(0,5).map(function(r){ return '- '+r.date+' / '+(r.myDeck||'未設定')+' / '+(r.oppDeck||'未設定')+' / '+r.result; }).join('
+') || 'なし';
+  document.getElementById('summary').textContent='保存済みデッキ 上位5件
+'+recentDecks+'
+
+直近戦績 上位5件
+'+recentRecords;
+}
+function migrateLegacy(){ const p=buildPortalFromLegacy(); writePortal(p); localStorage.setItem(LEGACY_DECK_KEY, JSON.stringify(p.decks)); const recordState={decks:Array.from(new Set(p.decks.map(function(d){ return d.deck_name; }))).map(function(name){ return {name:name}; }), records:p.records}; localStorage.setItem(LEGACY_RECORD_KEY, JSON.stringify(recordState)); alert('既存データをポータル形式へ同期しました。'); render(); }
+function exportPortalBackup(){ const p=buildPortalFromLegacy(); writePortal(p); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(p,null,2)],{type:'application/json'})); a.download='ucg_portal_backup_'+new Date().toISOString().slice(0,10)+'.json'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+function triggerImport(){ document.getElementById('import-file').value=''; document.getElementById('import-file').click(); }
+document.getElementById('import-file').addEventListener('change', function(e){ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=function(ev){ try{ const imported=JSON.parse(ev.target.result); let p=blankPortal(); if(imported && imported.version===2 && Array.isArray(imported.records)){ p=Object.assign({}, p, imported, {decks:mergeUniqueDecks(imported.decks||[])}); p.records=(p.records||[]).map(function(r){ return normalizeRecord(r,p.decks); }); } else if(imported && Array.isArray(imported.records)){ const decks=mergeUniqueDecks(imported.decks||[]); p=Object.assign({}, p, {decks:decks, records:(imported.records||[]).map(function(r){ return normalizeRecord(r,decks); }), exportedAt:new Date().toISOString(), app:'UCG Portal (migrated)'}); } else { alert('読込できるJSON形式ではありません。'); return; } writePortal(p); localStorage.setItem(LEGACY_DECK_KEY, JSON.stringify(p.decks)); localStorage.setItem(LEGACY_RECORD_KEY, JSON.stringify({decks:Array.from(new Set(p.decks.map(function(d){ return d.deck_name; }))).map(function(name){ return {name:name}; }), records:p.records})); alert('バックアップを復元しました。'); render(); } catch(err){ console.error(err); alert('バックアップの読込に失敗しました。'); } }; reader.readAsText(file); });
+render();
+</script>
+</body>
+</html>
