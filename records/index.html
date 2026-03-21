@@ -335,6 +335,7 @@ body.light .player-tag{background:rgba(0,100,200,0.08);border-color:rgba(0,100,2
       <p>BATTLE RECORD TRACKER</p>
     </div>
     <div style="display:flex;gap:4px;align-items:center;margin-left:auto;flex-shrink:0">
+      <a href="../index.html" class="btn-csv" style="text-decoration:none;display:inline-flex;align-items:center" title="ポータルへ戻る">← PORTAL</a>
       <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="ライト/ダーク切替">🌙</button>
       <button class="btn-csv" onclick="exportJSON()" title="JSONバックアップ">↓ BAK</button>
       <button class="btn-csv" onclick="importJSON()" title="JSONリストア">↑ RST</button>
@@ -976,15 +977,18 @@ populateStatsFilters();renderStats();renderDeckChips();populateMyDeckSelect();
   const PORTAL_KEY='ucg_portal_data_v2';
   const LEGACY_MATCH_KEY='ultraman_v5';
   const LEGACY_DECK_KEY='ucg_saved_decks';
+
   function safeJsonParse(s,fallback){ try{return JSON.parse(s);}catch(e){return fallback;} }
+
   function readPortal(){
     const raw=safeJsonParse(localStorage.getItem(PORTAL_KEY)||'null', null);
     if(raw && raw.version===2 && Array.isArray(raw.decks) && Array.isArray(raw.records)) return raw;
     return {version:2, exportedAt:null, app:'UCG Portal', decks:[], records:[], practiceLogs:[], deckNotes:[], meta:{}};
   }
+
   function normalizeDeck(d){
     if(!d) return null;
-    const cards=Array.isArray(d.cards)?d.cards.map(c=>({card_id:String(c.card_id??c.id??''), quantity:Number(c.quantity??c.qty??1)||1})).filter(c=>c.card_id):[]:[];
+    const cards=Array.isArray(d.cards)?d.cards.map(c=>({card_id:String(c.card_id??c.id??''), quantity:Number(c.quantity??c.qty??1)||1})).filter(c=>c.card_id):[];
     const now=new Date().toISOString();
     return {
       deck_id:String(d.deck_id||('deck_'+Date.now()+'_'+Math.random().toString(36).slice(2,7))),
@@ -998,6 +1002,7 @@ populateStatsFilters();renderStats();renderDeckChips();populateMyDeckSelect();
       note:typeof d.note==='string'?d.note:''
     };
   }
+
   function readSharedDecks(){
     const portal=readPortal();
     const legacy=safeJsonParse(localStorage.getItem(LEGACY_DECK_KEY)||'[]', []);
@@ -1008,111 +1013,141 @@ populateStatsFilters();renderStats();renderDeckChips();populateMyDeckSelect();
     });
     return [...map.values()].sort((a,b)=>a.deck_name.localeCompare(b.deck_name,'ja'));
   }
-  function ensureDeckStateMerged(){
-    const names=new Set((state.decks||[]).map(d=>typeof d==='string'?d:(d&&d.name)||''));
-    readSharedDecks().forEach(d=>{ if(!names.has(d.deck_name)){ state.decks.push({name:d.deck_name}); names.add(d.deck_name);} });
+
+  function getDeckCatalog(){
+    const shared=readSharedDecks();
+    const map=new Map();
+    shared.forEach(d=>map.set(d.deck_name,{id:d.deck_id,name:d.deck_name,source:'shared'}));
+    (state.decks||[]).forEach(d=>{
+      const name=d?.name||d?.deck_name||'';
+      if(name && !map.has(name)) map.set(name,{id:'',name,source:'local'});
+    });
+    return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'ja'));
   }
-  function getSelectedDeckMeta(){
-    const sel=document.getElementById('my-deck');
-    const opt=sel.options[sel.selectedIndex];
-    return {name:sel.value||'', deckId:opt && opt.dataset ? (opt.dataset.deckId||'') : ''};
+
+  function syncRecordsDeckIds(){
+    const catalog=getDeckCatalog();
+    const byName=new Map(catalog.map(d=>[d.name,d.id]).filter(([name,id])=>name&&id));
+    (state.records||[]).forEach(r=>{
+      if(!r.myDeckId && r.myDeck && byName.has(r.myDeck)) r.myDeckId=byName.get(r.myDeck);
+      if(!r.turn) r.turn='unknown';
+      if(!r.ts) r.ts=new Date().toISOString();
+      if(!r.tournamentType) r.tournamentType='';
+      if(!r.oppPlayer) r.oppPlayer='不明';
+    });
+    state.decks = catalog.map(d=>({name:d.name, deck_id:d.id || ''}));
   }
-  function findDeckNameById(deckId){
-    if(!deckId) return '';
-    const d=readSharedDecks().find(x=>x.deck_id===deckId);
-    return d?d.deck_name:'';
-  }
+
   function normalizeRecord(r){
-    const deckName=(r.myDeck && String(r.myDeck)) || findDeckNameById(r.myDeckId) || '';
+    const deckName=(r.myDeck && String(r.myDeck)) || '';
     const sharedByName=readSharedDecks().find(d=>d.deck_name===deckName);
     return {
-      id: String(r.id||('record_'+Date.now()+'_'+Math.random().toString(36).slice(2,7))),
-      date: r.date||new Date().toISOString().slice(0,10),
-      ts: r.ts||new Date().toISOString(),
-      result: r.result||'win',
-      turn: r.turn||'unknown',
+      id: r.id || Date.now(),
+      date: r.date || dispDate(todayStr()),
+      ts: r.ts || new Date().toISOString(),
+      result: r.result || 'win',
+      turn: r.turn || 'unknown',
       myDeckId: r.myDeckId || (sharedByName ? sharedByName.deck_id : ''),
       myDeck: deckName,
-      oppDeck: r.oppDeck||'',
-      oppPlayer: r.oppPlayer||'不明',
-      tournamentType: r.tournamentType||'',
-      memo: r.memo||'',
-      source: r.source||'match_record'
+      oppDeck: r.oppDeck || '',
+      oppPlayer: r.oppPlayer || '不明',
+      tournamentType: r.tournamentType || '',
+      memo: r.memo || '',
+      source: r.source || 'match_record'
     };
   }
+
   function syncPortal(){
-    ensureDeckStateMerged();
+    syncRecordsDeckIds();
     const portal=readPortal();
-    const sharedDecks=readSharedDecks();
-    portal.decks=sharedDecks;
+    portal.decks=readSharedDecks();
     portal.records=(state.records||[]).map(normalizeRecord);
     portal.exportedAt=new Date().toISOString();
     localStorage.setItem(PORTAL_KEY, JSON.stringify(portal));
     localStorage.setItem(LEGACY_MATCH_KEY, JSON.stringify(state));
   }
+
   const originalSave=window.save;
   window.save=function(){
     if(typeof originalSave==='function') originalSave();
     syncPortal();
   };
+
   window.populateMyDeckSelect=function(){
-    ensureDeckStateMerged();
+    syncRecordsDeckIds();
     const sel=document.getElementById('my-deck');
     const current=sel.value;
-    const shared=readSharedDecks();
-    const merged=[];
-    const seenNames=new Set();
-    shared.forEach(d=>{ if(!seenNames.has(d.deck_name)){ merged.push({name:d.deck_name, deckId:d.deck_id}); seenNames.add(d.deck_name);} });
-    (state.decks||[]).forEach(d=>{ const name=typeof d==='string'?d:(d&&d.name)||''; if(name && !seenNames.has(name)){ merged.push({name, deckId:''}); seenNames.add(name);} });
-    merged.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
-    sel.innerHTML='<option value="">デッキを選択</option>'+merged.map(function(d){ return '<option value="'+esc(d.name)+'" data-deck-id="'+esc(d.deckId||'')+'">'+esc(d.name)+'</option>'; }).join('');
+    const decks=getDeckCatalog();
+    sel.innerHTML='<option value="">デッキを選択</option>'+decks.map(d=>`<option value="${esc(d.name)}" data-deck-id="${esc(d.id||'')}">${esc(d.name)}</option>`).join('');
     if(current) sel.value=current;
   };
+
   window.saveRecord=function(){
-    const dateVal=document.getElementById('match-date').value;
-    const deckMeta=getSelectedDeckMeta();
-    const myDeck=deckMeta.name;
+    if(!selResult){toast('結果を選択してください');return}
+    const deckSel=document.getElementById('my-deck');
+    const myDeck=deckSel.value;
+    const opt=deckSel.options[deckSel.selectedIndex];
+    const myDeckId=(opt && opt.dataset ? opt.dataset.deckId : '') || '';
     if(!myDeck){toast('使用デッキを選択してください');return}
     const oppDeck=document.getElementById('opp-deck').value.trim();
-    const oppPlayer=(document.getElementById('opp-player').value.trim()||'不明');
+    const oppPlayer=document.getElementById('opp-player').value.trim()||'不明';
     const memo=document.getElementById('memo').value.trim();
     const tourType=document.getElementById('tournament-type').value;
-    const editId=document.getElementById('edit-record-id').value;
+    const dateVal=document.getElementById('rec-date').value||todayStr();
+    const editId=document.getElementById('edit-id').value;
     if(editId){
-      const idx=state.records.findIndex(r=>String(r.id)===editId);
-      if(idx!==-1) state.records[idx]={...state.records[idx], result:selResult, turn:selTurn, myDeck:myDeck, myDeckId:deckMeta.deckId||state.records[idx].myDeckId||'', oppDeck:oppDeck, oppPlayer:oppPlayer, memo:memo, tournamentType:tourType, date:dispDate(dateVal), ts:new Date(dateVal).toISOString()};
-      save();closeModal('modal-record');renderHistory();renderStats();
-      toast('対戦記録を更新しました');
-    }else{
-      state.records.unshift({id:String(Date.now()), result:selResult, turn:selTurn, myDeck:myDeck, myDeckId:deckMeta.deckId||'', oppDeck:oppDeck, oppPlayer:oppPlayer, memo:memo, tournamentType:tourType, date:dispDate(dateVal), ts:new Date(dateVal).toISOString(), source:'match_record'});
-      save();renderStats();
-      persistDate=dateVal; persistTour=tourType; persistDeck=myDeck;
+      const idx=state.records.findIndex(r=>String(r.id)===String(editId));
+      if(idx!==-1) state.records[idx]={...state.records[idx],result:selResult,turn:selTurn,myDeck,myDeckId:myDeckId||state.records[idx].myDeckId||'',oppDeck,oppPlayer,memo,tournamentType:tourType,date:dispDate(dateVal),ts:new Date(dateVal).toISOString()};
+      toast('記録を更新しました');
+      save();
       closeModal('modal-record');
-      toast('対戦記録を保存しました');
+      renderHistory();
+      renderStats();
+    }else{
+      state.records.unshift({id:Date.now(),result:selResult,turn:selTurn,myDeck,myDeckId,oppDeck,oppPlayer,memo,tournamentType:tourType,date:dispDate(dateVal),ts:new Date(dateVal).toISOString(),source:'match_record'});
+      save();
+      renderStats();
+      persistDate=dateVal; persistTour=tourType; persistDeck=myDeck;
+      selResult=''; selTurn='unknown';
+      ['win','lose','draw'].forEach(x=>document.getElementById('rb-'+x).className='res-btn');
+      ['first','second'].forEach(x=>document.getElementById('tb-'+x).className='turn-btn');
+      document.getElementById('tb-unknown').className='turn-btn sel-unknown';
+      document.getElementById('opp-deck').value='';
+      document.getElementById('opp-player').value='';
+      document.getElementById('memo').value='';
+      document.querySelector('#modal-record .modal').scrollTop=0;
+      toast('記録しました！続けて入力できます');
     }
   };
+
   window.editRecord=function(id){
-    const r=state.records.find(r=>String(r.id)===String(id));if(!r)return;
-    document.getElementById('edit-record-id').value=r.id;
-    document.getElementById('modal-record-title').textContent='対戦記録を編集';
-    document.getElementById('match-date').value=(r.ts?new Date(r.ts):new Date((r.date||'').replace(/\//g,'-'))).toISOString().slice(0,10);
-    selectResult(r.result); selectTurn(r.turn||'unknown');
+    const r=state.records.find(r=>String(r.id)===String(id)); if(!r) return;
     populateMyDeckSelect();
-    const sel=document.getElementById('my-deck');
-    if(r.myDeckId){
-      const hit=[].slice.call(sel.options).find(o=>o.dataset && o.dataset.deckId===r.myDeckId);
-      if(hit) sel.value=hit.value; else sel.value=r.myDeck||'';
+    document.getElementById('edit-id').value=id;
+    document.getElementById('modal-record-title').textContent='記録を編集';
+    selResult=r.result;
+    ['win','lose','draw'].forEach(x=>document.getElementById('rb-'+x).className='res-btn'+(x===r.result?' sel-'+x:''));
+    selTurn=r.turn||'unknown';
+    ['first','second','unknown'].forEach(x=>document.getElementById('tb-'+x).className='turn-btn'+(x===selTurn?' sel-'+x:''));
+    const editDeckSel=document.getElementById('my-deck');
+    const matchedById=r.myDeckId && [...editDeckSel.options].some(o=>o.dataset && o.dataset.deckId===String(r.myDeckId));
+    if(matchedById){
+      const hit=[...editDeckSel.options].find(o=>o.dataset && o.dataset.deckId===String(r.myDeckId));
+      if(hit) editDeckSel.value=hit.value;
     } else {
-      sel.value=r.myDeck||'';
+      editDeckSel.value=r.myDeck||'';
     }
     document.getElementById('opp-deck').value=r.oppDeck||'';
-    document.getElementById('opp-player').value=r.oppPlayer==='不明'?'':(r.oppPlayer||'');
+    document.getElementById('opp-player').value=r.oppPlayer&&r.oppPlayer!=='不明'?r.oppPlayer:'';
     document.getElementById('memo').value=r.memo||'';
     document.getElementById('tournament-type').value=r.tournamentType||'';
-    openModal('modal-record');
+    document.getElementById('rec-date').value=isoDate(r.date)||todayStr();
+    document.getElementById('modal-record').classList.add('open');
+    document.body.style.overflow='hidden';
   };
+
   window.exportJSON=function(){
-    ensureDeckStateMerged();
+    syncRecordsDeckIds();
     const portal=readPortal();
     portal.decks=readSharedDecks();
     portal.records=(state.records||[]).map(normalizeRecord);
@@ -1120,23 +1155,22 @@ populateStatsFilters();renderStats();renderDeckChips();populateMyDeckSelect();
     const json=JSON.stringify(portal,null,2);
     const a=document.createElement('a');
     a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
-    a.download='ucg_portal_backup_'+new Date().toISOString().slice(0,10)+'.json';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    a.download=`ucg_portal_backup_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
     toast('v2バックアップを保存しました');
   };
+
   window.handleJSONImport=function(e){
     const file=e.target.files[0]; if(!file) return;
     const reader=new FileReader();
     reader.onload=function(ev){
       try{
         const imported=JSON.parse(ev.target.result);
-        let nextPortal=readPortal();
         let importedRecords=[];
         let importedDecks=[];
         if(imported && imported.version===2 && Array.isArray(imported.records)){
           importedRecords=imported.records;
           importedDecks=Array.isArray(imported.decks)?imported.decks:[];
-          nextPortal=Object.assign({}, nextPortal, imported, {version:2});
         }else if(imported && Array.isArray(imported.records)){
           importedRecords=imported.records;
           importedDecks=Array.isArray(imported.decks)?imported.decks:[];
@@ -1144,35 +1178,33 @@ populateStatsFilters();renderStats();renderDeckChips();populateMyDeckSelect();
           toast('ファイルの形式が正しくありません');
           return;
         }
-        if(!confirm(importedRecords.length+'件の記録と'+(importedDecks.length||0)+'個のデッキをインポートします。
-現在のデータは上書きされます。よろしいですか？')) return;
-        const sharedNames=readSharedDecks();
-        const normalizedDecks=[].concat(sharedNames, importedDecks).map(normalizeDeck).filter(Boolean);
+        if(!confirm(`${importedRecords.length}件の記録と${importedDecks.length||0}個のデッキをインポートします。\n現在のデータは上書きされます。よろしいですか？`)) return;
+        const normalizedDecks=[...readSharedDecks(), ...importedDecks.map(normalizeDeck).filter(Boolean)];
         const deckNameMap=new Map();
-        normalizedDecks.forEach(d=>{ if(!deckNameMap.has(d.deck_name)) deckNameMap.set(d.deck_name,d.deck_id); });
+        normalizedDecks.forEach(d=>{ if(d && !deckNameMap.has(d.deck_name)) deckNameMap.set(d.deck_name,d.deck_id); });
         state={
-          decks:[].slice.call(new Set(normalizedDecks.map(d=>d.deck_name).filter(Boolean))),
-          records: importedRecords.map(function(r){
+          decks:Array.from(new Set(normalizedDecks.map(d=>d.deck_name).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'ja')).map(name=>({name})),
+          records: importedRecords.map(r=>{
             const nr=normalizeRecord(r);
             if(!nr.myDeckId && nr.myDeck && deckNameMap.has(nr.myDeck)) nr.myDeckId=deckNameMap.get(nr.myDeck);
             return nr;
           })
         };
-        state.decks=Array.from(new Set(normalizedDecks.map(function(d){ return d.deck_name; }).filter(Boolean))).sort(function(a,b){ return a.localeCompare(b,'ja'); }).map(function(name){ return {name:name}; });
-        nextPortal.decks=normalizedDecks;
-        nextPortal.records=state.records;
-        nextPortal.exportedAt=new Date().toISOString();
-        localStorage.setItem(PORTAL_KEY, JSON.stringify(nextPortal));
-        localStorage.setItem(LEGACY_DECK_KEY, JSON.stringify(normalizedDecks));
-        if(typeof originalSave==='function') originalSave(); else localStorage.setItem(LEGACY_MATCH_KEY, JSON.stringify(state));
-        renderStats();renderDeckChips();populateMyDeckSelect();populateStatsFilters();renderHistory();
-        toast(state.records.length+'件の記録を復元しました！');
+        const portal=readPortal();
+        portal.decks=Array.from(new Map(normalizedDecks.filter(Boolean).map(d=>[d.deck_id,d])).values());
+        portal.records=state.records;
+        portal.exportedAt=new Date().toISOString();
+        localStorage.setItem(PORTAL_KEY, JSON.stringify(portal));
+        localStorage.setItem(LEGACY_DECK_KEY, JSON.stringify(portal.decks));
+        save();
+        renderStats(); renderDeckChips(); populateMyDeckSelect(); populateStatsFilters(); renderHistory();
+        toast(`${state.records.length}件の記録を復元しました！`);
       }catch(err){ console.error(err); toast('ファイルの読み込みに失敗しました'); }
     };
     reader.readAsText(file);
   };
-  ensureDeckStateMerged();
-  state.records=(state.records||[]).map(normalizeRecord);
+
+  syncRecordsDeckIds();
   syncPortal();
   populateMyDeckSelect();
   renderDeckChips();
