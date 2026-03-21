@@ -559,6 +559,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:#05080f;color:#e0eeff;disp
   </div>
 </div>
 
+
+<div class="portal-mini-nav" style="height:42px;display:flex;align-items:center;gap:10px;padding:0 16px;background:#09131f;border-bottom:1px solid #1c2e4a;flex-shrink:0;">
+  <a href="../index.html" style="color:#9fdfff;text-decoration:none;font-weight:700;">← ポータル</a>
+  <a href="../records/index.html" style="color:#ffb199;text-decoration:none;font-weight:700;">戦績記録へ</a>
+  <span style="margin-left:auto;color:#6b90b8;font-size:12px;">保存済みデッキはポータル共通データへ同期されます</span>
+</div>
 <div class="tabs">
   <button class="tab on" id="tab-cards" onclick="goTab('cards')">🃏 カード一覧</button>
   <button class="tab"    id="tab-deck"  onclick="goTab('deck')">⚡ デッキ<span class="tbadge grn" id="dbadge" style="display:none">0</span></button>
@@ -1440,38 +1446,9 @@ function copyExp(){navigator.clipboard.writeText(document.getElementById('exta')
 // ═══════════════════════════════════════════
 // SAVED DECKS
 // ═══════════════════════════════════════════
-const SAVED_KEY='ucg_decks';
-const LEGACY_SAVED_KEY='ucg_saved_decks';
-function normalizeSavedDeck(d){
-  return {
-    deck_id: d?.deck_id || ('deck_'+Date.now()+'_'+Math.random().toString(36).slice(2,8)),
-    deck_name: d?.deck_name || d?.name || '新規デッキ',
-    created_at: d?.created_at || d?.updated_at || new Date().toISOString(),
-    updated_at: d?.updated_at || d?.created_at || new Date().toISOString(),
-    total: Number(d?.total || 0),
-    cards: Array.isArray(d?.cards) ? d.cards.map(x=>({card_id:Number(x.card_id),quantity:Number(x.quantity||0)})).filter(x=>x.card_id&&x.quantity>0) : []
-  };
-}
-function loadSaved(){
-  try{
-    const rawNew=JSON.parse(localStorage.getItem(SAVED_KEY)||'[]');
-    if(Array.isArray(rawNew)&&rawNew.length)return rawNew.map(normalizeSavedDeck);
-  }catch(e){}
-  try{
-    const rawLegacy=JSON.parse(localStorage.getItem(LEGACY_SAVED_KEY)||'[]');
-    if(Array.isArray(rawLegacy)&&rawLegacy.length){
-      const migrated=rawLegacy.map(normalizeSavedDeck);
-      writeSaved(migrated);
-      return migrated;
-    }
-  }catch(e){}
-  return [];
-}
-function writeSaved(list){
-  const normalized=(Array.isArray(list)?list:[]).map(normalizeSavedDeck);
-  localStorage.setItem(SAVED_KEY,JSON.stringify(normalized));
-  localStorage.setItem(LEGACY_SAVED_KEY,JSON.stringify(normalized));
-}
+const SAVED_KEY='ucg_saved_decks';
+function loadSaved(){try{return JSON.parse(localStorage.getItem(SAVED_KEY)||'[]');}catch{return[];}}
+function writeSaved(list){localStorage.setItem(SAVED_KEY,JSON.stringify(list));}
 function saveDeck(){
   const t=tot();if(t===0){toast('カードを追加してから保存してください','err');return;}
   const name=document.getElementById('deckName').value.trim()||'新規デッキ';
@@ -2552,5 +2529,68 @@ function closeOv(id){document.getElementById(id).classList.remove('open');}
 renderDeck();
 boot();
 </script>
+
+<script>
+(function(){
+  const PORTAL_KEY='ucg_portal_data_v2';
+  const LEGACY_KEY='ucg_saved_decks';
+  function safeJsonParse(s, fallback){ try{return JSON.parse(s);}catch(e){return fallback;} }
+  function readPortal(){
+    const raw=safeJsonParse(localStorage.getItem(PORTAL_KEY)||'null', null);
+    if(raw && raw.version===2 && Array.isArray(raw.decks) && Array.isArray(raw.records)) return raw;
+    return {version:2, exportedAt:null, app:'UCG Portal', decks:[], records:[], practiceLogs:[], deckNotes:[], meta:{}};
+  }
+  function normalizeDeck(d){
+    if(!d) return null;
+    const cards=Array.isArray(d.cards)?d.cards.map(c=>({card_id:String(c.card_id??c.id??''), quantity:Number(c.quantity??c.qty??1)||1})).filter(c=>c.card_id):[];
+    const now=new Date().toISOString();
+    return {
+      deck_id: String(d.deck_id||('deck_'+Date.now()+'_'+Math.random().toString(36).slice(2,7))),
+      deck_name: String(d.deck_name||d.name||'名称未設定'),
+      created_at: d.created_at||now,
+      updated_at: now,
+      total: Number(d.total)||cards.reduce((a,c)=>a+c.quantity,0),
+      cards,
+      source:'builder',
+      tags:Array.isArray(d.tags)?d.tags:[],
+      note: typeof d.note==='string'?d.note:''
+    };
+  }
+  function writePortalDecks(list){
+    const portal=readPortal();
+    portal.decks=(Array.isArray(list)?list:[]).map(normalizeDeck).filter(Boolean);
+    portal.exportedAt=new Date().toISOString();
+    localStorage.setItem(PORTAL_KEY, JSON.stringify(portal));
+    localStorage.setItem(LEGACY_KEY, JSON.stringify(portal.decks));
+  }
+  function mergeLegacyAndPortal(){
+    const legacy=safeJsonParse(localStorage.getItem(LEGACY_KEY)||'[]', []);
+    const portal=readPortal();
+    const merged=[];
+    const seen=new Set();
+    [...portal.decks, ...legacy].forEach(d=>{
+      const n=normalizeDeck(d);
+      if(!n || seen.has(n.deck_id)) return;
+      seen.add(n.deck_id);
+      merged.push(n);
+    });
+    merged.sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
+    return merged;
+  }
+  const _writeSaved=window.writeSaved;
+  window.loadSaved=function(){
+    const merged=mergeLegacyAndPortal();
+    localStorage.setItem(LEGACY_KEY, JSON.stringify(merged));
+    return merged;
+  };
+  window.writeSaved=function(list){
+    writePortalDecks(list);
+    if(typeof _writeSaved==='function') try{ _writeSaved(list); }catch(e){}
+  };
+  writePortalDecks(mergeLegacyAndPortal());
+  if(typeof renderSavedDecks==='function') renderSavedDecks();
+})();
+</script>
+
 </body>
 </html>
