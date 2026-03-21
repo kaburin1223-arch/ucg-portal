@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>UCGポータル</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07111f;
+  --bg2:#0c1a2b;
+  --card:#101c2f;
+  --line:rgba(80,145,255,.22);
+  --line2:rgba(80,145,255,.36);
+  --text:#eef4ff;
+  --muted:#a7b7d4;
+  --blue:#39b8ff;
+  --blue2:#1f8cff;
+  --orange:#ff8b3d;
+  --orange2:#ff6b1f;
+  --btn:#132844;
+  --good:#5cd39d;
+  --shadow:0 18px 48px rgba(0,0,0,.35);
+  --r:24px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Noto Sans JP',sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(57,184,255,.18), transparent 32%),
+    radial-gradient(circle at top right, rgba(255,107,31,.14), transparent 28%),
+    linear-gradient(180deg, #04101c 0%, #07111f 100%);
+  color:var(--text);
+  min-height:100vh;
+}
+.wrap{max-width:920px;margin:0 auto;padding:28px 18px 40px}
+.hero,.status,.tips{
+  background:linear-gradient(135deg, rgba(17,28,47,.96), rgba(22,22,29,.96));
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  box-shadow:var(--shadow);
+}
+.hero{padding:30px 24px 26px;margin-top:18px}
+.hero h1{
+  margin:0 0 14px;
+  font-size:clamp(28px, 7vw, 54px);
+  line-height:1.06;
+  letter-spacing:.02em;
+  font-weight:900;
+}
+.hero p{
+  margin:0;
+  color:var(--muted);
+  font-size:clamp(16px, 4.2vw, 19px);
+  line-height:1.9;
+}
+.main-actions{margin-top:28px;display:grid;grid-template-columns:1fr;gap:14px}
+.sub-actions{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.btn{
+  display:flex;align-items:center;justify-content:center;
+  text-decoration:none;color:#fff;font-weight:700;
+  border:none;border-radius:18px;cursor:pointer;
+  min-height:68px;padding:0 18px;
+  font-size:clamp(18px,4.8vw,22px);
+  transition:transform .15s ease, opacity .15s ease, box-shadow .15s ease;
+  box-shadow:0 10px 24px rgba(0,0,0,.22);
+}
+.btn:active{transform:translateY(1px)}
+.btn.primary{
+  background:linear-gradient(135deg, var(--blue), var(--blue2));
+  color:#08131f;
+}
+.btn.record{
+  background:linear-gradient(135deg, #ff994f, var(--orange2));
+  color:#1e1108;
+}
+.btn.sub{
+  min-height:56px;
+  background:var(--btn);
+  border:1px solid var(--line2);
+  color:var(--text);
+  font-size:clamp(15px,4vw,18px);
+}
+.note{
+  margin-top:16px;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.8;
+}
+.status{padding:24px 22px;margin-top:28px}
+.status h2,.tips h2{
+  margin:0 0 18px;
+  font-size:clamp(26px,6.5vw,40px);
+  line-height:1.1;
+}
+.status p{margin:0 0 18px;color:var(--muted);font-size:15px;line-height:1.8}
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+}
+.stat{
+  background:rgba(9,19,35,.7);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:16px 14px;
+}
+.stat-label{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.stat-value{
+  font-family:'Orbitron',sans-serif;
+  font-size:clamp(22px,6vw,34px);
+  font-weight:900;
+  line-height:1;
+}
+.stat-sub{
+  margin-top:8px;
+  font-size:12px;
+  color:var(--muted);
+}
+.tips{padding:24px 22px;margin-top:24px}
+.tips ul{margin:0;padding-left:1.2em;color:var(--muted);line-height:1.9}
+.footer{
+  margin-top:18px;
+  color:#8fa4c6;
+  font-size:12px;
+  text-align:center;
+}
+.hidden{display:none}
+@media (min-width:760px){
+  .main-actions{grid-template-columns:1fr 1fr}
+  .sub-actions{grid-template-columns:repeat(3,1fr)}
+  .stats-grid{grid-template-columns:repeat(4,1fr)}
+  .hero{padding:36px 30px 30px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <h1>UCG ポータル</h1>
+    <p>
+      デッキ作成と戦績記録をまとめて管理できるポータルです。<br>
+      まずはデッキを作成し、その後に対戦結果を記録していきましょう。
+    </p>
+
+    <div class="main-actions">
+      <a class="btn primary" href="./builder/">デッキビルダー＆シミュレータ</a>
+      <a class="btn record" href="./records/">戦績記録ツール</a>
+    </div>
+
+    <div class="sub-actions">
+      <button class="btn sub" type="button" onclick="exportPortalBackup()">バックアップを保存</button>
+      <button class="btn sub" type="button" onclick="triggerImport()">バックアップを復元</button>
+      <button class="btn sub" type="button" onclick="syncExistingData()">データを同期</button>
+    </div>
+
+    <div class="note">
+      データは端末内に保存されます。必要に応じてバックアップを保存してください。
+    </div>
+    <input id="backup-file" class="hidden" type="file" accept=".json" onchange="importPortalBackup(event)">
+  </section>
+
+  <section class="status">
+    <h2>データ状態</h2>
+    <p>現在保存されているデッキ数と戦績件数を確認できます。</p>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-label">共有デッキ</div>
+        <div class="stat-value" id="stat-shared-decks">0</div>
+        <div class="stat-sub">builder連携用</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">戦績件数</div>
+        <div class="stat-value" id="stat-records">0</div>
+        <div class="stat-sub">records側</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">ポータル保存</div>
+        <div class="stat-value" id="stat-portal">0</div>
+        <div class="stat-sub">v2バックアップ対象</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">最終同期</div>
+        <div class="stat-value" id="stat-sync">--</div>
+        <div class="stat-sub">同期時刻</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tips">
+    <h2>使い方</h2>
+    <ul>
+      <li>デッキビルダーで保存したデッキは、戦績記録の使用デッキ候補に反映されます。</li>
+      <li>旧バックアップも復元対象として扱えるように設計しています。</li>
+      <li>重要なデータは定期的に「バックアップを保存」で退避してください。</li>
+    </ul>
+  </section>
+
+  <div class="footer">UCG Portal</div>
+</div>
+
+<script>
+const PORTAL_KEY = 'ucg_portal_data_v2';
+const LEGACY_RECORD_KEY = 'ultraman_v5';
+const SHARED_DECK_KEY = 'ucg_decks';
+const LEGACY_BUILDER_KEY = 'ucg_saved_decks';
+
+function safeParse(raw, fallback){
+  try{ return JSON.parse(raw); }catch(e){ return fallback; }
+}
+function nowIso(){ return new Date().toISOString(); }
+function timeLabel(iso){
+  if(!iso) return '--';
+  const d = new Date(iso);
+  if(Number.isNaN(d.getTime())) return '--';
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${hh}:${mm}`;
+}
+function normalizeDeck(deck){
+  if(!deck) return null;
+  const deck_id = String(deck.deck_id || deck.id || '');
+  const deck_name = String(deck.deck_name || deck.name || '');
+  if(!deck_name) return null;
+  return {
+    deck_id: deck_id || `deck_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+    deck_name,
+    created_at: deck.created_at || nowIso(),
+    updated_at: deck.updated_at || nowIso(),
+    total: Number(deck.total || 0),
+    cards: Array.isArray(deck.cards) ? deck.cards : [],
+    source: deck.source || 'builder',
+    tags: Array.isArray(deck.tags) ? deck.tags : [],
+    note: typeof deck.note === 'string' ? deck.note : ''
+  };
+}
+function normalizeRecord(record){
+  if(!record) return null;
+  return {
+    id: String(record.id || `record_${Date.now()}_${Math.random().toString(36).slice(2,7)}`),
+    date: record.date || new Date().toISOString().slice(0,10),
+    ts: record.ts || nowIso(),
+    result: record.result || 'win',
+    turn: record.turn || 'unknown',
+    myDeckId: record.myDeckId || '',
+    myDeck: record.myDeck || '',
+    oppDeck: record.oppDeck || '',
+    oppPlayer: record.oppPlayer || '不明',
+    tournamentType: record.tournamentType || '',
+    memo: record.memo || '',
+    source: record.source || 'match_record'
+  };
+}
+function readPortal(){
+  const raw = safeParse(localStorage.getItem(PORTAL_KEY) || 'null', null);
+  if(raw && raw.version === 2 && Array.isArray(raw.decks) && Array.isArray(raw.records)){
+    return {
+      version: 2,
+      exportedAt: raw.exportedAt || null,
+      app: raw.app || 'UCG Portal',
+      decks: raw.decks.map(normalizeDeck).filter(Boolean),
+      records: raw.records.map(normalizeRecord).filter(Boolean),
+      practiceLogs: Array.isArray(raw.practiceLogs) ? raw.practiceLogs : [],
+      deckNotes: Array.isArray(raw.deckNotes) ? raw.deckNotes : [],
+      meta: raw.meta && typeof raw.meta === 'object' ? raw.meta : {}
+    };
+  }
+  return {version:2, exportedAt:null, app:'UCG Portal', decks:[], records:[], practiceLogs:[], deckNotes:[], meta:{}};
+}
+function writePortal(data){
+  localStorage.setItem(PORTAL_KEY, JSON.stringify(data));
+}
+function readSharedDecks(){
+  const a = safeParse(localStorage.getItem(SHARED_DECK_KEY) || '[]', []);
+  const b = safeParse(localStorage.getItem(LEGACY_BUILDER_KEY) || '[]', []);
+  const map = new Map();
+  [...a, ...b].forEach(d => {
+    const n = normalizeDeck(d);
+    if(n && !map.has(n.deck_id)) map.set(n.deck_id, n);
+  });
+  return [...map.values()];
+}
+function readLegacyRecordsState(){
+  return safeParse(localStorage.getItem(LEGACY_RECORD_KEY) || '{"decks":[],"records":[]}', {decks:[],records:[]});
+}
+function syncExistingData(){
+  const portal = readPortal();
+  const sharedDecks = readSharedDecks();
+  const legacyState = readLegacyRecordsState();
+
+  const deckNameToId = new Map();
+  const mergedDecks = new Map();
+
+  [...portal.decks, ...sharedDecks].forEach(d => {
+    const n = normalizeDeck(d);
+    if(n){
+      mergedDecks.set(n.deck_id, n);
+      deckNameToId.set(n.deck_name, n.deck_id);
+    }
+  });
+
+  const localOnlyDecks = Array.isArray(legacyState.decks) ? legacyState.decks : [];
+  localOnlyDecks.forEach(d => {
+    const deckName = String((d && (d.deck_name || d.name)) || '').trim();
+    if(!deckName) return;
+    if(!deckNameToId.has(deckName)){
+      const n = normalizeDeck({deck_name: deckName, source:'records'});
+      mergedDecks.set(n.deck_id, n);
+      deckNameToId.set(deckName, n.deck_id);
+    }
+  });
+
+  const mergedRecords = (Array.isArray(legacyState.records) ? legacyState.records : []).map(r => {
+    const nr = normalizeRecord(r);
+    if(!nr.myDeckId && nr.myDeck && deckNameToId.has(nr.myDeck)){
+      nr.myDeckId = deckNameToId.get(nr.myDeck);
+    }
+    return nr;
+  });
+
+  const nextPortal = {
+    ...portal,
+    exportedAt: nowIso(),
+    decks: [...mergedDecks.values()].sort((x,y)=>x.deck_name.localeCompare(y.deck_name,'ja')),
+    records: mergedRecords
+  };
+
+  writePortal(nextPortal);
+  localStorage.setItem(SHARED_DECK_KEY, JSON.stringify(nextPortal.decks));
+  const nextLegacyState = {
+    decks: nextPortal.decks.map(d => ({name:d.deck_name, deck_id:d.deck_id})),
+    records: nextPortal.records
+  };
+  localStorage.setItem(LEGACY_RECORD_KEY, JSON.stringify(nextLegacyState));
+
+  renderStatus();
+  alert('データを同期しました。');
+}
+function exportPortalBackup(){
+  const portal = readPortal();
+  portal.exportedAt = nowIso();
+  writePortal(portal);
+  const blob = new Blob([JSON.stringify(portal, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ucg_portal_backup_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+function triggerImport(){
+  document.getElementById('backup-file').value = '';
+  document.getElementById('backup-file').click();
+}
+function importPortalBackup(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const imported = JSON.parse(e.target.result);
+      let decks = [];
+      let records = [];
+
+      if(imported && imported.version === 2 && Array.isArray(imported.records)){
+        decks = Array.isArray(imported.decks) ? imported.decks : [];
+        records = imported.records;
+      }else if(imported && Array.isArray(imported.records)){
+        decks = Array.isArray(imported.decks) ? imported.decks : [];
+        records = imported.records;
+      }else{
+        alert('復元できない形式です。');
+        return;
+      }
+
+      if(!confirm(`${records.length}件の記録を復元します。現在のデータは上書きされます。よろしいですか？`)) return;
+
+      const normalizedDecks = decks.map(normalizeDeck).filter(Boolean);
+      const nameMap = new Map(normalizedDecks.map(d => [d.deck_name, d.deck_id]));
+      const normalizedRecords = records.map(r => {
+        const nr = normalizeRecord(r);
+        if(!nr.myDeckId && nr.myDeck && nameMap.has(nr.myDeck)){
+          nr.myDeckId = nameMap.get(nr.myDeck);
+        }
+        return nr;
+      });
+
+      const portal = {
+        version: 2,
+        exportedAt: nowIso(),
+        app: 'UCG Portal',
+        decks: normalizedDecks,
+        records: normalizedRecords,
+        practiceLogs: [],
+        deckNotes: [],
+        meta: {}
+      };
+      writePortal(portal);
+      localStorage.setItem(SHARED_DECK_KEY, JSON.stringify(normalizedDecks));
+      localStorage.setItem(LEGACY_RECORD_KEY, JSON.stringify({
+        decks: normalizedDecks.map(d => ({name:d.deck_name, deck_id:d.deck_id})),
+        records: normalizedRecords
+      }));
+      renderStatus();
+      alert('バックアップを復元しました。');
+    }catch(err){
+      alert('ファイルの読み込みに失敗しました。');
+    }
+  };
+  reader.readAsText(file);
+}
+function renderStatus(){
+  const portal = readPortal();
+  const sharedDecks = readSharedDecks();
+  const recordsState = readLegacyRecordsState();
+
+  document.getElementById('stat-shared-decks').textContent = String(sharedDecks.length);
+  document.getElementById('stat-records').textContent = String((recordsState.records || []).length);
+  document.getElementById('stat-portal').textContent = String((portal.records || []).length);
+  document.getElementById('stat-sync').textContent = timeLabel(portal.exportedAt);
+}
+renderStatus();
+</script>
+</body>
+</html>
