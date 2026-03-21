@@ -335,7 +335,6 @@ body.light .player-tag{background:rgba(0,100,200,0.08);border-color:rgba(0,100,2
       <p>BATTLE RECORD TRACKER</p>
     </div>
     <div style="display:flex;gap:4px;align-items:center;margin-left:auto;flex-shrink:0">
-      <a href="../index.html" class="btn-csv" style="text-decoration:none;display:inline-flex;align-items:center" title="ポータルへ戻る">← PORTAL</a>
       <button class="theme-toggle" id="theme-btn" onclick="toggleTheme()" title="ライト/ダーク切替">🌙</button>
       <button class="btn-csv" onclick="exportJSON()" title="JSONバックアップ">↓ BAK</button>
       <button class="btn-csv" onclick="importJSON()" title="JSONリストア">↑ RST</button>
@@ -1070,7 +1069,7 @@ populateStatsFilters();renderStats();renderDeckChips();populateMyDeckSelect();
     if(current) sel.value=current;
   };
   window.saveRecord=function(){
-    const dateVal=document.getElementById('rec-date').value;
+    const dateVal=document.getElementById('match-date').value;
     const deckMeta=getSelectedDeckMeta();
     const myDeck=deckMeta.name;
     if(!myDeck){toast('使用デッキを選択してください');return}
@@ -1078,7 +1077,7 @@ populateStatsFilters();renderStats();renderDeckChips();populateMyDeckSelect();
     const oppPlayer=(document.getElementById('opp-player').value.trim()||'不明');
     const memo=document.getElementById('memo').value.trim();
     const tourType=document.getElementById('tournament-type').value;
-    const editId=document.getElementById('edit-id').value;
+    const editId=document.getElementById('edit-record-id').value;
     if(editId){
       const idx=state.records.findIndex(r=>String(r.id)===editId);
       if(idx!==-1) state.records[idx]={...state.records[idx], result:selResult, turn:selTurn, myDeck:myDeck, myDeckId:deckMeta.deckId||state.records[idx].myDeckId||'', oppDeck:oppDeck, oppPlayer:oppPlayer, memo:memo, tournamentType:tourType, date:dispDate(dateVal), ts:new Date(dateVal).toISOString()};
@@ -1088,22 +1087,15 @@ populateStatsFilters();renderStats();renderDeckChips();populateMyDeckSelect();
       state.records.unshift({id:String(Date.now()), result:selResult, turn:selTurn, myDeck:myDeck, myDeckId:deckMeta.deckId||'', oppDeck:oppDeck, oppPlayer:oppPlayer, memo:memo, tournamentType:tourType, date:dispDate(dateVal), ts:new Date(dateVal).toISOString(), source:'match_record'});
       save();renderStats();
       persistDate=dateVal; persistTour=tourType; persistDeck=myDeck;
-      selResult='';selTurn='unknown';
-      ['win','lose','draw'].forEach(function(x){document.getElementById('rb-'+x).className='res-btn';});
-      ['first','second'].forEach(function(x){document.getElementById('tb-'+x).className='turn-btn';});
-      document.getElementById('tb-unknown').className='turn-btn sel-unknown';
-      document.getElementById('opp-deck').value='';
-      document.getElementById('opp-player').value='';
-      document.getElementById('memo').value='';
-      document.querySelector('#modal-record .modal').scrollTop=0;
-      toast('記録しました！続けて入力できます');
+      closeModal('modal-record');
+      toast('対戦記録を保存しました');
     }
   };
   window.editRecord=function(id){
     const r=state.records.find(r=>String(r.id)===String(id));if(!r)return;
-    document.getElementById('edit-id').value=r.id;
+    document.getElementById('edit-record-id').value=r.id;
     document.getElementById('modal-record-title').textContent='対戦記録を編集';
-    document.getElementById('rec-date').value=(r.ts?new Date(r.ts):new Date((r.date||'').replace(/\//g,'-'))).toISOString().slice(0,10);
+    document.getElementById('match-date').value=(r.ts?new Date(r.ts):new Date((r.date||'').replace(/\//g,'-'))).toISOString().slice(0,10);
     selectResult(r.result); selectTurn(r.turn||'unknown');
     populateMyDeckSelect();
     const sel=document.getElementById('my-deck');
@@ -1117,8 +1109,7 @@ populateStatsFilters();renderStats();renderDeckChips();populateMyDeckSelect();
     document.getElementById('opp-player').value=r.oppPlayer==='不明'?'':(r.oppPlayer||'');
     document.getElementById('memo').value=r.memo||'';
     document.getElementById('tournament-type').value=r.tournamentType||'';
-    document.getElementById('modal-record').classList.add('open');
-    document.body.style.overflow='hidden';
+    openModal('modal-record');
   };
   window.exportJSON=function(){
     ensureDeckStateMerged();
