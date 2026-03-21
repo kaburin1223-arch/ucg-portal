@@ -22,8 +22,13 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--tx);
 /* ══ HEADER ══ */
 .hdr{height:52px;flex-shrink:0;display:flex;align-items:center;gap:10px;padding:0 16px;background:#cc0000;border-bottom:none;position:relative;z-index:50;}
 .hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);}
-.logo{font-family:'Orbitron',sans-serif;font-size:17px;font-weight:900;letter-spacing:2px;color:#111;text-shadow:none;}
+.logo{font-family:'Orbitron',sans-serif;color:#111;text-shadow:none;}
 .logo em{color:#fff;font-style:normal;}
+.logo-stack{display:flex;flex-direction:column;justify-content:center;line-height:1;gap:2px;min-width:92px;}
+.logo-top{font-size:17px;font-weight:900;letter-spacing:2px;}
+.logo-bottom{font-size:11px;font-weight:900;letter-spacing:1.5px;color:#fff;}
+body.light .logo-top{color:#fff;}
+body.light .logo-bottom{color:#fff;}
 .hpills{margin-left:auto;display:flex;gap:6px;}
 .hpill{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.18);border:1px solid rgba(0,0,0,.28);border-radius:20px;padding:3px 11px;font-size:11px;color:rgba(255,255,255,.82);}
 .hpill b{font-family:'Rajdhani',sans-serif;font-size:16px;color:#fff;}
@@ -31,8 +36,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--tx);
 .hpill.over b{color:var(--red);}
 
 /* ══ TABS ══ */
-.tabs{height:46px;flex-shrink:0;display:flex;background:var(--bg2);border-bottom:1px solid var(--bd);}
-.tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;font-size:12px;font-weight:700;color:var(--tx2);cursor:pointer;border:none;background:none;position:relative;transition:color .2s;font-family:'Noto Sans JP',sans-serif;}
+.tabs{height:40px;flex-shrink:0;display:flex;background:var(--bg2);border-bottom:1px solid var(--bd);}
+.tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;font-weight:700;color:var(--tx2);cursor:pointer;border:none;background:none;position:relative;transition:color .2s;font-family:'Noto Sans JP',sans-serif;}
 .tab.on{color:var(--tx);}
 .tab.on::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--ac);box-shadow:0 0 8px var(--ac);}
 .tbadge{background:var(--red);color:#fff;border-radius:10px;padding:0 5px;font-size:9px;min-width:16px;text-align:center;line-height:15px;height:15px;}
@@ -49,7 +54,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--tx);
 #panel-sim.on{display:flex;flex-direction:column;}
 
 /* ══ SEARCH ══ */
-.search-bar{position:sticky;top:0;z-index:10;padding:9px 12px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;gap:7px;align-items:center;}
+.search-bar{position:sticky;top:0;z-index:10;padding:7px 10px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;gap:7px;align-items:center;}
 .si-wrap{position:relative;flex:1;}
 .si-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--tx3);pointer-events:none;}
 .sinput{width:100%;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:8px 10px 8px 32px;color:var(--tx);font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color .2s;}
@@ -57,7 +62,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--tx);
 .sinput::placeholder{color:var(--tx3);}
 .filter-btn{padding:8px 13px;border-radius:8px;border:1px solid var(--bd);background:var(--bg3);color:var(--tx2);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;gap:4px;}
 .filter-btn.active{border-color:var(--bd2);color:var(--tx);background:rgba(204,0,0,.12);}
-.af-bar{padding:6px 12px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.af-bar{padding:5px 10px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
 .af-chip{padding:3px 9px;border-radius:20px;font-size:10px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.25);color:var(--ac);cursor:pointer;display:flex;align-items:center;gap:4px;}
 
 /* ══ LOAD/ERR ══ */
@@ -816,12 +821,35 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
   .cc-cnt{font-size:15px !important}
 }
 
+
+@media (max-width: 540px){
+  .portal-mini-nav{height:32px !important;padding:0 10px !important;gap:6px !important;}
+  .portal-mini-nav a{font-size:12px !important;}
+  .portal-mini-nav span{font-size:10px !important;}
+  .tabs{height:38px !important;}
+  .tab{font-size:10px !important;}
+}
+
+
+/* detail image zoom */
+.detail-img img,.detail-img-ph{cursor:zoom-in;}
+.imgzoom-overlay{position:fixed;inset:0;background:rgba(0,0,0,.86);backdrop-filter:blur(6px);z-index:950;display:flex;align-items:center;justify-content:center;padding:16px;}
+.imgzoom-overlay.hidden{display:none!important;}
+.imgzoom-box{position:relative;max-width:96vw;max-height:92vh;display:flex;align-items:center;justify-content:center;}
+.imgzoom-img{max-width:96vw;max-height:92vh;object-fit:contain;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.45);}
+.imgzoom-close{position:absolute;top:-8px;right:-8px;width:38px;height:38px;border-radius:19px;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.imgzoom-close:hover{background:rgba(204,0,0,.75);}
+@media (max-width: 540px){
+  .logo-stack{min-width:84px;gap:1px;}
+  .logo-top{font-size:16px;}
+  .logo-bottom{font-size:10px;letter-spacing:1.2px;}
+}
 </style>
 </head>
 <body>
 
 <div class="hdr">
-  <div class="logo">UCG <em>DECK</em> <span style="color:var(--purp);font-size:13px">& SIM</span></div>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -832,10 +860,10 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
 </div>
 
 
-<div class="portal-mini-nav" style="height:42px;display:flex;align-items:center;gap:10px;padding:0 16px;background:var(--bg2);border-bottom:1px solid var(--bd);flex-shrink:0;">
-  <a href="../index.html" style="color:#f0e0e0;text-decoration:none;font-weight:700;">← ポータル</a>
-  <a href="../records/index.html" style="color:#ff8888;text-decoration:none;font-weight:700;">戦績記録へ</a>
-  <span style="margin-left:auto;color:var(--tx3);font-size:12px;">保存済みデッキは共通データとして連携されます</span>
+<div class="portal-mini-nav" style="height:34px;display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--bg2);border-bottom:1px solid var(--bd);flex-shrink:0;">
+  <a href="../index.html" style="color:#f0e0e0;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;white-space:nowrap;line-height:1;">← Portal</a>
+  <a href="../records/index.html" style="color:#ff8888;text-decoration:none;font-weight:700;display:inline-flex;align-items:center;white-space:nowrap;line-height:1;">← Records</a>
+  <span style="margin-left:auto;color:var(--tx3);font-size:11px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">保存済みデッキは共通データとして連携されます</span>
 </div>
 <div class="tabs">
   <button class="tab on" id="tab-cards" onclick="goTab('cards')">🃏 カード一覧</button>
@@ -1236,6 +1264,13 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
   </div>
 </div>
 
+<div class="imgzoom-overlay hidden" id="imgZoomOv" onclick="closeImageZoom(event)">
+  <div class="imgzoom-box">
+    <button class="imgzoom-close" onclick="closeImageZoom()">✕</button>
+    <img class="imgzoom-img" id="imgZoomImg" alt="">
+  </div>
+</div>
+
 <div class="toasts" id="toasts"></div>
 
 <script>
@@ -1572,7 +1607,7 @@ function openDetail(id){
   }
   document.getElementById('detailBody').innerHTML=`
     <div class="detail-top">
-      ${imgUrl?`<div class="detail-img"><img src="${imgUrl}" alt="${name}" style="width:${imgW};height:${imgH};object-fit:cover;border-radius:8px;"></div>`:`<div class="detail-img-ph" style="width:${imgW};height:${imgH};font-size:32px">${fe(feat)}</div>`}
+      ${imgUrl?`<div class="detail-img"><img src="${imgUrl}" alt="${name}" onclick="openImageZoom('${imgUrl}','${name.replace(/'/g, '&#39;')}')" style="width:${imgW};height:${imgH};object-fit:cover;border-radius:8px;"></div>`:`<div class="detail-img-ph" style="width:${imgW};height:${imgH};font-size:32px">${fe(feat)}</div>`}
       <div class="detail-meta">
         <div class="detail-name">${name}</div>
         ${tyn?`<div class="detail-tyn">${tyn}</div>`:''}
@@ -2794,6 +2829,22 @@ function closeOv(id){document.getElementById(id).classList.remove('open');}
     }
   });
 });
+
+function openImageZoom(src, alt=''){
+  const ov=document.getElementById('imgZoomOv');
+  const img=document.getElementById('imgZoomImg');
+  if(!ov||!img||!src)return;
+  img.src=src;
+  img.alt=alt||'card image';
+  ov.classList.remove('hidden');
+}
+function closeImageZoom(e){
+  if(e && e.target && e.target.id!=='imgZoomOv' && !e.target.classList.contains('imgzoom-close')) return;
+  const ov=document.getElementById('imgZoomOv');
+  const img=document.getElementById('imgZoomImg');
+  if(ov) ov.classList.add('hidden');
+  if(img){ img.removeAttribute('src'); img.alt=''; }
+}
 
 // ═══════════════════════════════════════════
 // INIT
