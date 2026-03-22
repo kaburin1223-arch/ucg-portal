@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-1.8 fixed layout final ===== */
+/* ===== vSolo-1.9 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1549,12 +1549,73 @@ header{margin:0 !important;}
   }
 }
 
+
+/* ===== reveal modal compact + bulk actions vSolo-1.9 ===== */
+.reveal-modal{max-width:1000px;max-height:80dvh !important;}
+.reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
+.reveal-modal-title{font-size:12px !important;}
+.reveal-modal-sub{font-size:10px !important;line-height:1.2 !important;}
+.reveal-modal-actions{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.reveal-grid{
+  display:flex !important;
+  gap:8px !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  padding:8px 10px !important;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+}
+.reveal-card{
+  min-width:188px !important;
+  max-width:188px !important;
+  scroll-snap-align:start;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:6px !important;
+  padding:8px !important;
+}
+.reveal-thumb{
+  width:100% !important;
+  height:112px !important;
+  border-radius:8px !important;
+}
+.reveal-thumb img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:contain !important;
+  background:rgba(0,0,0,.12);
+}
+.reveal-meta{width:100% !important;min-width:0 !important;}
+.reveal-name{font-size:11px !important;line-height:1.25 !important;margin-bottom:3px !important;}
+.reveal-sub{font-size:9px !important;line-height:1.15 !important;margin-bottom:6px !important;}
+.reveal-row{display:flex !important;gap:5px !important;flex-wrap:wrap !important;}
+.reveal-btn{
+  padding:6px 7px !important;
+  border-radius:8px !important;
+  font-size:10px !important;
+  line-height:1.1 !important;
+}
+.reveal-btn.bulk{
+  font-weight:800 !important;
+}
+@media (max-width:540px){
+  .reveal-modal-overlay{align-items:flex-end !important;padding:0 !important;}
+  .reveal-modal{width:100% !important;max-width:none !important;max-height:78dvh !important;border-radius:16px 16px 0 0 !important;}
+  .reveal-modal-hd{padding:8px 8px !important;}
+  .reveal-grid{padding:8px !important;gap:7px !important;}
+  .reveal-card{min-width:168px !important;max-width:168px !important;padding:7px !important;}
+  .reveal-thumb{height:98px !important;}
+  .reveal-name{font-size:10px !important;}
+  .reveal-sub{font-size:8px !important;}
+  .reveal-btn{font-size:9px !important;padding:5px 6px !important;}
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.8</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.9</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -1996,7 +2057,9 @@ header{margin:0 !important;}
         <div class="reveal-modal-sub" id="revealModalSub">山札から公開したカード</div>
       </div>
       <div class="reveal-modal-actions">
-        <button class="reveal-btn" type="button" onclick="clearRevealCards()">公開解除</button>
+        <button class="reveal-btn bulk danger" type="button" onclick="bulkResolveRevealCards('trash')">一括トラッシュ</button>
+        <button class="reveal-btn bulk" type="button" onclick="bulkResolveRevealCards('topShuffle')">シャッフルしてデッキ上</button>
+        <button class="reveal-btn bulk" type="button" onclick="bulkResolveRevealCards('bottomShuffle')">シャッフルしてデッキ下</button>
         <button class="reveal-btn" type="button" onclick="closeRevealModal()">閉じる</button>
       </div>
     </div>
@@ -3806,6 +3869,48 @@ function simScrollFieldToRight(){
   const el=document.querySelector('.my-field-scroll');
   if(!el) return;
   requestAnimationFrame(()=>{ el.scrollLeft = 0; });
+}
+
+
+function shuffleArrayCopy(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function bulkResolveRevealCards(action){
+  if(typeof GS==='undefined' || !GS || !Array.isArray(GS.publicReveals)) return;
+  const arr = GS.publicReveals;
+  if(!arr.length){
+    if(typeof toast==='function') toast('公開カードはありません');
+    return;
+  }
+  if(typeof simSnapshot==='function') simSnapshot();
+
+  if(action==='trash'){
+    const moved = arr.splice(0, arr.length);
+    GS.graveMy.push(...moved);
+    if(typeof simLog==='function') simLog(`🗑 公開カード${moved.length}枚を一括でトラッシュ`,'info');
+    if(typeof toast==='function') toast(`${moved.length}枚をトラッシュしました`);
+  }else if(action==='topShuffle'){
+    const moved = shuffleArrayCopy(arr.splice(0, arr.length));
+    GS.deckMy = [...moved, ...GS.deckMy];
+    if(typeof simLog==='function') simLog(`🔀 公開カード${moved.length}枚をシャッフルしてデッキ上に戻した`,'info');
+    if(typeof toast==='function') toast(`${moved.length}枚をデッキ上に戻しました`);
+  }else if(action==='bottomShuffle'){
+    const moved = shuffleArrayCopy(arr.splice(0, arr.length));
+    GS.deckMy = [...GS.deckMy, ...moved];
+    if(typeof simLog==='function') simLog(`🔀 公開カード${moved.length}枚をシャッフルしてデッキ下に戻した`,'info');
+    if(typeof toast==='function') toast(`${moved.length}枚をデッキ下に戻しました`);
+  }
+
+  if(typeof simRenderAll==='function') simRenderAll();
+  renderRevealCards();
+  closeRevealActionMenu && closeRevealActionMenu();
+  closeRevealModal();
 }
 
 // ═══════════════════════════════════════════
