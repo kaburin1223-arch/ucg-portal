@@ -967,6 +967,15 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
   .slots-row{gap:6px}
 }
 
+
+/* fully hide opponent/cpu area for solo mode */
+#cpuArea, #simCpuArea, #opponentArea, #oppArea,
+.cpu-area, .sim-cpu-area, .opponent-area, .opp-area,
+#cpuHandBack, #cpuFieldRow, #cpuHandLbl,
+.sim-opp-area, .cpu-panel, .opp-panel {
+  display:none !important;
+}
+
 </style>
 </head>
 <body>
@@ -1155,7 +1164,7 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
               </div>
             </div>
             <div class="scene-slot" id="cpuSceneSlot" style="cursor:default;" onclick="simCtxCpuScene(event)">
-              <span style="font-size:9px;color:rgba(255,51,85,.5)">CPU</span>
+              
               <div id="cpuSceneContent" style="flex:1;display:flex;align-items:center;justify-content:center;">
                 <span style="font-size:10px;color:var(--tx3)">なし</span>
               </div>
@@ -2800,7 +2809,7 @@ function simGameover(won) {
   document.getElementById('simGOStats').innerHTML=`
     <div class="go-stat"><div class="go-stat-n" style="color:var(--grn)">${GS.wins.my}</div><div class="go-stat-l">自分</div></div>
     <div class="go-stat"><div class="go-stat-n" style="color:var(--warn)">${GS.turn}</div><div class="go-stat-l">ターン数</div></div>
-    <div class="go-stat"><div class="go-stat-n" style="color:var(--red)">${GS.wins.cpu}</div><div class="go-stat-l">CPU</div></div>`;
+    <div class="go-stat"><div class="go-stat-n" style="color:var(--red)">${GS.wins.cpu}</div></div>`;
   simLog(won?'🎉 勝利！':'💀 敗北…','sys');
 }
 
