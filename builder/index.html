@@ -1077,7 +1077,7 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
     <div class="sim-ops-row">
       <button class="opbtn draw" onclick="simDrawN(1)" title="1枚ドロー">📥 ドロー</button>
       <button class="opbtn draw" onclick="openXNActionModal()" title="複数ドローまたは公開">×N操作</button>
-      <button class="opbtn" onclick="simPeekDeck()" title="デッキを確認・操作">📚 デッキ</button>
+      <button class="opbtn" id="simDeckPeekBtn" onclick="simPeekDeck()" title="デッキを確認・操作">📚 デッキ(50)</button>
       <button class="opbtn" onclick="simPeekGrave()" title="トラッシュを確認・操作">🗑 トラッシュ</button>
     </div>
     <div class="sim-ops-row">
@@ -1137,6 +1137,7 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
       <!-- Action bar -->
       <div class="sim-action" id="simAction">
         <div class="sim-hint" id="simHint">ゲーム開始前</div>
+      <div id="simDeckRemainInline" style="font-size:10px;color:var(--tx2);white-space:nowrap;">山札残 50枚</div>
         <div class="sim-btns" id="simBtns"></div>
       </div>
 
@@ -2774,6 +2775,14 @@ function simRenderHUD() {
   document.getElementById('sHudWins').textContent=`${GS.wins.my}-${GS.wins.cpu}`;
   document.getElementById('sHudDeck').textContent=GS.deckMy.length;
   document.getElementById('sHudGrave').textContent=GS.graveMy.length;
+  const deckBtn=document.getElementById('simDeckPeekBtn');
+  if(deckBtn) deckBtn.textContent=`📚 デッキ(${GS.deckMy.length})`;
+  const deckRemainInline=document.getElementById('simDeckRemainInline');
+  if(deckRemainInline) deckRemainInline.textContent=`山札残 ${GS.deckMy.length}枚`;
+  const revealSub=document.getElementById('revealModalSub');
+  if(revealSub && Array.isArray(GS.publicReveals)){
+    revealSub.textContent = GS.publicReveals.length ? `${GS.publicReveals.length}枚公開中 / 山札残${GS.deckMy.length}枚` : `山札残${GS.deckMy.length}枚`;
+  }
 }
 
 function simRenderHand() {
@@ -3026,8 +3035,6 @@ function closeImageZoom(e){
 
 
 // ===== reveal / xN operation enhancements =====
-window.revealedCards = window.revealedCards || [];
-
 
 window.revealActionIndex = null;
 
@@ -3047,7 +3054,7 @@ function closeRevealModal(e){
 }
 function clearRevealCards(){
   if(typeof GS !== 'undefined' && GS){
-    const remaining = Array.isArray(GS.publicReveals) ? GS.publicReveals : [];
+    const remaining = Array.isArray(GS.publicReveals) ? [...GS.publicReveals] : [];
     if(remaining.length){
       GS.deckMy = [...remaining, ...GS.deckMy];
       GS.publicReveals = [];
@@ -3067,7 +3074,10 @@ function renderRevealCards(){
   const sub=document.getElementById('revealModalSub');
   if(!grid) return;
   const arr=getRevealCards();
-  if(sub) sub.textContent = arr.length ? `${arr.length}枚公開中` : '山札から公開したカード';
+  if(sub){
+    const deckRemain=(typeof GS!=='undefined' && GS)?GS.deckMy.length:0;
+    sub.textContent = arr.length ? `${arr.length}枚公開中 / 山札残${deckRemain}枚` : `山札残${deckRemain}枚`;
+  }
   if(!arr.length){
     grid.innerHTML='<div class="reveal-empty">公開カードはありません</div>';
     return;
@@ -3177,15 +3187,14 @@ function submitXNAction(mode){
   const inp=document.getElementById('xnActionCount');
   const cnt=Math.max(1, parseInt(inp?.value||'1',10)||1);
   closeXNActionModal();
+  if(typeof GS==='undefined' || !GS) return;
   if(mode==='draw'){
-    if(typeof drawMultiple==='function') drawMultiple(cnt);
-    else if(typeof simDrawN==='function') simDrawN(cnt);
+    if(typeof simDrawCore==='function') simDrawCore(cnt, true);
   }else{
-    if(typeof revealMultiple==='function') revealMultiple(cnt);
-    else if(typeof simRevealN==='function'){
-      if(typeof simSnapshot==='function') simSnapshot();
-      simRevealN(cnt);
-      openRevealModal && openRevealModal();
+    if(typeof simSnapshot==='function') simSnapshot();
+    if(typeof simRevealN==='function'){
+      const done = simRevealN(cnt);
+      if(done>0 && typeof openRevealModal==='function') openRevealModal();
     }
   }
 }
