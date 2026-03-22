@@ -1212,12 +1212,137 @@ body.sim-no-vertical{overflow:hidden;}
   }
 }
 
+
+/* tighter solo simulator fit v1.6 */
+html,body{height:100%;overflow:hidden !important;}
+body.sim-no-vertical{overflow:hidden !important;}
+.simulator-root,.sim-main-wrap,#simArea,.sim-area,.simulator-area{
+  height:100dvh !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+.sz.scene-sz{
+  flex:0 0 92px !important;
+  min-height:92px !important;
+  max-height:92px !important;
+  margin-bottom:6px !important;
+  padding:8px 10px !important;
+}
+.sz.scene-sz .zone-head{
+  margin-bottom:6px !important;
+}
+.solo-scene-slot,.scene-slot{
+  min-height:52px !important;
+  max-height:52px !important;
+  padding:6px 10px !important;
+}
+
+.sz.field-sz{
+  flex:0 0 128px !important;
+  min-height:128px !important;
+  max-height:128px !important;
+  padding:8px 10px !important;
+  overflow:hidden !important;
+}
+.sz.field-sz .zone-head{
+  margin-bottom:4px !important;
+}
+#myFieldBP{
+  font-size:11px !important;
+  line-height:1.1 !important;
+}
+.my-field-scroll{
+  height:86px !important;
+  min-height:86px !important;
+  max-height:86px !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+}
+#myFieldRow{
+  height:86px !important;
+  align-items:flex-end !important;
+}
+.fslot{
+  width:62px !important;
+  height:86px !important;
+}
+.fslot-img,.fslot-ph{
+  height:58px !important;
+}
+.fslot-bar{
+  min-height:20px !important;
+}
+.fslot-stage,.fslot-bp,.fslot-mod,.fslot-cnt{
+  font-size:9px !important;
+  line-height:1 !important;
+}
+
+.sim-log, .log-wrap, #simLog, #simLogWrap, .sim-log-area, .sim-log-panel{
+  flex:0 0 40px !important;
+  max-height:40px !important;
+  min-height:40px !important;
+  font-size:11px !important;
+  line-height:1.2 !important;
+  overflow:auto !important;
+}
+#simHint, .sim-hint{
+  font-size:9px !important;
+  line-height:1.1 !important;
+}
+.hand-zone, .sz.hand-sz, .hand-wrap{
+  padding-top:6px !important;
+}
+.hand-head, .zone-head.hand-head{
+  margin-bottom:4px !important;
+}
+
+@media (max-width:540px){
+  .sz.scene-sz{
+    flex-basis:84px !important;
+    min-height:84px !important;
+    max-height:84px !important;
+    padding:7px 8px !important;
+  }
+  .solo-scene-slot,.scene-slot{
+    min-height:46px !important;
+    max-height:46px !important;
+    padding:5px 8px !important;
+  }
+  .sz.field-sz{
+    flex-basis:118px !important;
+    min-height:118px !important;
+    max-height:118px !important;
+    padding:7px 8px !important;
+  }
+  .my-field-scroll,#myFieldRow{
+    height:78px !important;
+    min-height:78px !important;
+    max-height:78px !important;
+  }
+  .fslot{
+    width:58px !important;
+    height:78px !important;
+  }
+  .fslot-img,.fslot-ph{
+    height:52px !important;
+  }
+  .sim-log, .log-wrap, #simLog, #simLogWrap, .sim-log-area, .sim-log-panel{
+    flex-basis:34px !important;
+    max-height:34px !important;
+    min-height:34px !important;
+    font-size:10px !important;
+  }
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.5</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.6</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
