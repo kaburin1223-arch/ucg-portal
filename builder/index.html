@@ -1146,12 +1146,20 @@ div[data-solo-hide="cpu-strip"],
   display:none !important;
 }
 
+
+/* solo simulator cleanup v1.4 */
+.solo-scene-strip{display:block !important;}
+.solo-scene-slot{width:100% !important; max-width:none !important;}
+#cpuSceneSlot,#cpuSceneContent,.cpu-sz,.cpu-slots-row{
+  display:none !important;
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.3</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.4</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -1313,14 +1321,7 @@ div[data-solo-hide="cpu-strip"],
       <div class="sim-scroll" id="simScroll">
 
         <!-- CPU zone -->
-        <div class="sz cpu-sz">
-          <div class="sz-lbl"><span class="sz-lbl-r" id="cpuHandLbl">手札 0枚</span>
-          </div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px;" id="cpuHandBack"></div>
-          <div class="cpu-slots-row" id="cpuFieldRow"></div>
-        </div>
-
-        <!-- Scene zone -->
+<!-- Scene zone -->
         <div class="sz scene-sz">
           <div class="sz-lbl" style="color:var(--sc)">SCENE
             <span style="font-size:9px;color:var(--tx3)">手札からシーンカード選択→ここをタップ</span>
