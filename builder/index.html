@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-3.0 fixed layout final ===== */
+/* ===== vSolo-3.1 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-3.0 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-3.1 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.0 reveal modal tighter width + close returns cards */
+/* vSolo-3.1 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1651,7 +1651,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.0 ui rebalance + ctx open fix */
+/* vSolo-3.1 ui rebalance + ctx open fix */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:4px !important;
   padding-bottom:8px !important;
@@ -1712,7 +1712,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.0 tighter ops/log, more field */
+/* vSolo-3.1 tighter ops/log, more field */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:2px !important;
   padding-bottom:5px !important;
@@ -1779,7 +1779,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.0 visibility rebalance */
+/* vSolo-3.1 visibility rebalance */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:1px !important;
   padding-bottom:3px !important;
@@ -1869,7 +1869,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.0 bigger battle cards */
+/* vSolo-3.1 bigger battle cards */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:0 !important;
   padding-bottom:2px !important;
@@ -1935,7 +1935,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.0 reveal stage1 + charge badge */
+/* vSolo-3.1 reveal stage1 + charge badge */
 .fslot-charge{
   position:absolute;
   left:4px;
@@ -1962,7 +1962,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.0 charge list modal */
+/* vSolo-3.1 charge list modal */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2034,14 +2034,14 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.0 grave slot placement buttons */
+/* vSolo-3.1 grave slot placement buttons */
 .pca.field{
   white-space:normal !important;
   line-height:1.1 !important;
 }
 
 
-/* vSolo-3.0 charge modal fallback */
+/* vSolo-3.1 charge modal fallback */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2052,7 +2052,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.0 pending target bar */
+/* vSolo-3.1 pending target bar */
 .pending-target-bar{
   position:fixed;
   left:10px;
@@ -2090,12 +2090,39 @@ header{margin:0 !important;}
   .pending-target-cancel{padding:6px 9px;font-size:10px;}
 }
 
+
+/* vSolo-3.1 guaranteed overlays */
+.pending-target-bar{
+  position:fixed; left:10px; right:10px; bottom:90px; z-index:450;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:8px 10px; border-radius:12px;
+  border:1px solid rgba(45,212,191,.45);
+  background:rgba(8,18,26,.92); color:#d7fffa;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+}
+.pending-target-bar.hidden{display:none !important;}
+.pending-target-text{font-size:12px;font-weight:700;line-height:1.2;}
+.pending-target-cancel{
+  flex-shrink:0;padding:7px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);color:#fff;font-size:11px;font-weight:700;cursor:pointer;
+}
+.charge-modal{max-width:560px;max-height:78dvh !important;}
+.charge-list{display:flex;flex-direction:column;gap:8px;overflow-y:auto;padding:10px;}
+.charge-item{display:grid;grid-template-columns:88px 1fr;gap:8px;align-items:start;padding:8px;border:1px solid var(--bd);border-radius:10px;background:var(--bg2);}
+.charge-thumb{width:88px;height:62px;border-radius:8px;overflow:hidden;background:rgba(0,0,0,.14);display:flex;align-items:center;justify-content:center;}
+.charge-thumb img{width:100%;height:100%;object-fit:contain;}
+.charge-meta{min-width:0;}
+.charge-name{font-size:11px;font-weight:800;line-height:1.25;margin-bottom:3px;}
+.charge-sub{font-size:9px;color:var(--tx2);line-height:1.2;margin-bottom:6px;}
+.charge-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+.charge-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:999px;border:1px solid rgba(45,212,191,.45);background:rgba(45,212,191,.14);color:var(--sc);font-size:8px;font-weight:800;}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-3.0</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-3.1</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -4100,6 +4127,12 @@ function updatePendingTargetBar(){
 }
 
 function clearPendingTargetActions(){
+  if(window.pendingPeekTargetAction && window.pendingPeekTargetAction.card){
+    const p = window.pendingPeekTargetAction;
+    const arr = p.type==='deck' ? GS.deckMy : GS.graveMy;
+    const restoreIdx = Math.max(0, Math.min(p.sourceIndex ?? arr.length, arr.length));
+    arr.splice(restoreIdx, 0, p.card);
+  }
   window.pendingRevealTargetAction = null;
   window.pendingPeekTargetAction = null;
   if(typeof GS!=='undefined' && GS){
@@ -4114,7 +4147,8 @@ function simPeekBeginToFieldTop(type, idx){
   const arr = type==='deck' ? GS.deckMy : GS.graveMy;
   const card = arr[idx];
   if(!card) return;
-  window.pendingPeekTargetAction = { type, idx, cardId: card.id || '', mode:'top' };
+  const moved = arr.splice(idx,1)[0];
+  window.pendingPeekTargetAction = { type, mode:'top', card:moved, sourceIndex:idx };
   window.pendingRevealTargetAction = null;
   GS.selHand = null;
   simClosePeek();
@@ -4128,7 +4162,8 @@ function simPeekBeginToFieldBottom(type, idx){
   const arr = type==='deck' ? GS.deckMy : GS.graveMy;
   const card = arr[idx];
   if(!card) return;
-  window.pendingPeekTargetAction = { type, idx, cardId: card.id || '', mode:'bottom' };
+  const moved = arr.splice(idx,1)[0];
+  window.pendingPeekTargetAction = { type, mode:'bottom', card:moved, sourceIndex:idx };
   window.pendingRevealTargetAction = null;
   GS.selHand = null;
   simClosePeek();
@@ -4145,21 +4180,14 @@ function simApplyPendingPeekTarget(slot){
     if(typeof toast==='function') toast('未開放のバトルエリアです');
     return true;
   }
-  const arr = pending.type==='deck' ? GS.deckMy : GS.graveMy;
-  let realIdx = Number.isInteger(pending.idx) ? pending.idx : -1;
-  if(pending.cardId){
-    const found = arr.findIndex(c => (c.id || '') === pending.cardId);
-    if(found >= 0) realIdx = found;
-  }
-  const card = arr[realIdx];
-  if(!card){
+  const moved = pending.card;
+  if(!moved){
     window.pendingPeekTargetAction = null;
     updatePendingTargetBar();
     if(typeof toast==='function') toast('対象カードが見つかりませんでした');
     return true;
   }
   simSnapshot();
-  const moved = arr.splice(realIdx,1)[0];
   const slotObj = GS.fieldMy[slot];
   if(!slotObj){
     GS.fieldMy[slot] = simBuildSlot(moved,false);
@@ -5108,6 +5136,28 @@ function toggleTheme(){
   }
 })();
 </script>
+
+
+<div id="pendingTargetBar" class="pending-target-bar hidden">
+  <div class="pending-target-text" id="pendingTargetText">置き先を選択してください</div>
+  <button class="pending-target-cancel" type="button" onclick="clearPendingTargetActions()">キャンセル</button>
+</div>
+
+
+<div class="reveal-modal-overlay" id="chargeModal" onclick="closeChargeModal(event)">
+  <div class="reveal-modal charge-modal">
+    <div class="reveal-modal-hd">
+      <div>
+        <div class="reveal-modal-title">チャージ一覧</div>
+        <div class="reveal-modal-sub" id="chargeModalSub">チャージカードはありません</div>
+      </div>
+      <div class="reveal-modal-actions">
+        <button class="reveal-btn" type="button" onclick="closeChargeModal()">閉じる</button>
+      </div>
+    </div>
+    <div class="charge-list" id="chargeList"></div>
+  </div>
+</div>
 
 </body>
 </html>
