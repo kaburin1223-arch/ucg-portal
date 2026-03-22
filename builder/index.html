@@ -2231,7 +2231,8 @@ function simDrawPrompt() {
 function simRevealN(n=1){
   if(!GS) return 0;
   const count=Math.max(0, Math.min(n, GS.deckMy.length));
-  GS.publicReveals = GS.deckMy.slice(0, count);
+  const revealed = GS.deckMy.splice(0, count);
+  GS.publicReveals = revealed;
   simLog(`👁 山札の上から${count}枚公開`,'info');
   simRenderAll();
   return count;
@@ -3046,7 +3047,14 @@ function closeRevealModal(e){
 }
 function clearRevealCards(){
   if(typeof GS !== 'undefined' && GS){
-    GS.publicReveals = [];
+    const remaining = Array.isArray(GS.publicReveals) ? GS.publicReveals : [];
+    if(remaining.length){
+      GS.deckMy = [...remaining, ...GS.deckMy];
+      GS.publicReveals = [];
+      if(typeof simLog==='function') simLog(`↩ 未処理の公開カード${remaining.length}枚をデッキ上に戻しました`,'info');
+    }else{
+      GS.publicReveals = [];
+    }
     if(typeof simRenderAll==='function') simRenderAll();
   }
   renderRevealCards();
@@ -3105,6 +3113,7 @@ function resolveRevealCardMenu(action){
 function resolveRevealCard(index, action){
   const arr=getRevealCards();
   if(index==null || index<0 || index>=arr.length) return;
+  if(typeof simSnapshot==='function') simSnapshot();
   const card = arr.splice(index,1)[0];
   if(!card) return;
   if(action==='hand'){
@@ -3173,7 +3182,11 @@ function submitXNAction(mode){
     else if(typeof simDrawN==='function') simDrawN(cnt);
   }else{
     if(typeof revealMultiple==='function') revealMultiple(cnt);
-    else if(typeof simRevealN==='function'){ simRevealN(cnt); openRevealModal && openRevealModal(); }
+    else if(typeof simRevealN==='function'){
+      if(typeof simSnapshot==='function') simSnapshot();
+      simRevealN(cnt);
+      openRevealModal && openRevealModal();
+    }
   }
 }
 
