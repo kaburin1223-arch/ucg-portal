@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-1.9 fixed layout final ===== */
+/* ===== vSolo-2.0 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-1.9 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-2.0 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1610,12 +1610,52 @@ header{margin:0 !important;}
   .reveal-btn{font-size:9px !important;padding:5px 6px !important;}
 }
 
+
+/* vSolo-2.0 reveal modal tighter width + close returns cards */
+.reveal-grid{
+  gap:6px !important;
+}
+.reveal-card{
+  min-width:160px !important;
+  max-width:160px !important;
+  padding:7px !important;
+}
+.reveal-thumb{
+  height:104px !important;
+}
+.reveal-name{
+  font-size:10px !important;
+}
+.reveal-sub{
+  font-size:8px !important;
+}
+.reveal-btn{
+  font-size:9px !important;
+  padding:5px 6px !important;
+}
+@media (max-width:540px){
+  .reveal-card{
+    min-width:148px !important;
+    max-width:148px !important;
+    padding:6px !important;
+  }
+  .reveal-thumb{
+    height:92px !important;
+  }
+  .reveal-name{
+    font-size:9px !important;
+  }
+  .reveal-sub{
+    font-size:8px !important;
+  }
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.9</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.0</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -3714,8 +3754,18 @@ function openRevealModal(){
 }
 function closeRevealModal(e){
   if(e && e.target && e.target.id!=='revealModal') return;
+  if(typeof GS !== 'undefined' && GS && Array.isArray(GS.publicReveals) && GS.publicReveals.length){
+    const remaining = [...GS.publicReveals];
+    GS.deckMy = [...remaining, ...GS.deckMy];
+    GS.publicReveals = [];
+    if(typeof simLog==='function') simLog(`↩ 公開カード${remaining.length}枚をそのままデッキ上に戻しました`,'info');
+    if(typeof simRenderAll==='function') simRenderAll();
+    if(typeof toast==='function') toast('公開カードをデッキ上に戻しました');
+  }
   const ov=document.getElementById('revealModal');
   if(ov) ov.classList.remove('open');
+  if(typeof renderRevealCards==='function') renderRevealCards();
+  if(typeof closeRevealActionMenu==='function') closeRevealActionMenu();
 }
 function clearRevealCards(){
   if(typeof GS !== 'undefined' && GS){
