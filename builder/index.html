@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-2.2 fixed layout final ===== */
+/* ===== vSolo-2.3 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-2.2 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-2.3 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.2 reveal modal tighter width + close returns cards */
+/* vSolo-2.3 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1650,12 +1650,73 @@ header{margin:0 !important;}
   }
 }
 
+
+/* vSolo-2.3 ui rebalance + ctx open fix */
+.sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
+  padding-top:4px !important;
+  padding-bottom:8px !important;
+}
+.sim-log, .log-wrap, #simLog, #simLogWrap, .sim-log-area, .sim-log-panel{
+  height:28px !important;
+  min-height:28px !important;
+  max-height:28px !important;
+  padding-top:3px !important;
+  padding-bottom:3px !important;
+}
+.sz.field-sz{
+  height:124px !important;
+  min-height:124px !important;
+  max-height:124px !important;
+}
+.my-field-scroll{
+  height:84px !important;
+  min-height:84px !important;
+  max-height:84px !important;
+}
+#myFieldRow{
+  height:84px !important;
+}
+.fslot{
+  width:60px !important;
+  height:84px !important;
+}
+.fslot-img,.fslot-ph{
+  height:56px !important;
+}
+@media (max-width:540px){
+  .sim-log, .log-wrap, #simLog, #simLogWrap, .sim-log-area, .sim-log-panel{
+    height:26px !important;
+    min-height:26px !important;
+    max-height:26px !important;
+  }
+  .sz.field-sz{
+    height:118px !important;
+    min-height:118px !important;
+    max-height:118px !important;
+  }
+  .my-field-scroll{
+    height:80px !important;
+    min-height:80px !important;
+    max-height:80px !important;
+  }
+  #myFieldRow{
+    height:80px !important;
+  }
+  .fslot{
+    width:58px !important;
+    height:80px !important;
+  }
+  .fslot-img,.fslot-ph{
+    height:53px !important;
+  }
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.2</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.3</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -3094,6 +3155,8 @@ function simShowCtx(e, items) {
 function simCtxMySlot(e, slot) {
   if (!GS) return;
   if (slot >= GS.activeBattleSlots) return;
+  if (e && e.preventDefault) e.preventDefault();
+  if (e && e.stopPropagation) e.stopPropagation();
   const x = e?.clientX || Math.round(window.innerWidth/2);
   const y = e?.clientY || Math.round(window.innerHeight/2);
   simCtxMySlotMain(x, y, slot);
