@@ -1337,12 +1337,36 @@ body.sim-no-vertical{overflow:hidden !important;}
   }
 }
 
+
+/* final no-vertical-scroll lock */
+html, body {
+  height: 100%;
+  overflow: hidden !important;
+}
+body.sim-no-vertical {
+  overflow: hidden !important;
+}
+.simulator-root,
+.sim-main-wrap,
+#simArea,
+.sim-area,
+.simulator-area,
+.app-shell,
+.app {
+  overflow: hidden !important;
+}
+.hand-wrap,
+.hand-zone,
+.sz.hand-sz {
+  overflow-y: hidden !important;
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.6</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.7</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
