@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-2.1 fixed layout final ===== */
+/* ===== vSolo-2.2 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-2.1 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-2.2 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.1 reveal modal tighter width + close returns cards */
+/* vSolo-2.2 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1655,7 +1655,7 @@ header{margin:0 !important;}
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.1</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.2</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -3048,6 +3048,16 @@ function simCloseCtx() {
 document.addEventListener('click', ()=>simCloseCtx());
 document.addEventListener('contextmenu', e=>{ if(!e.target.closest('.ctx-menu')) simCloseCtx(); });
 
+
+function simShowCtxAt(x, y, items){
+  simShowCtx({
+    preventDefault(){},
+    stopPropagation(){},
+    clientX:x,
+    clientY:y
+  }, items);
+}
+
 function simShowCtx(e, items) {
   simCloseCtx();
   e.preventDefault(); e.stopPropagation();
@@ -3084,35 +3094,9 @@ function simShowCtx(e, items) {
 function simCtxMySlot(e, slot) {
   if (!GS) return;
   if (slot >= GS.activeBattleSlots) return;
-  const slotObj = GS.fieldMy[slot];
-  if (!slotObj) return;
-  const top = slotObj.stack[slotObj.stack.length-1];
-  const bottom = slotObj.stack[0];
-  const name = top.detail?.name||top.number;
-  simShowCtx(e, [
-    { section: `スロット${slot+1}：${name}` },
-    { icon:'🔍', label:'カード詳細', action:()=>openDetail(top.id) },
-    { icon:'⬆', label:'グレードUP（BPを1段階上げる）', action:()=>simGradeUp('my',slot) },
-    { icon:'⬇', label:'グレードDN（BPを1段階下げる）', action:()=>simGradeDown('my',slot) },
-    { icon:'💪', label:'BP増減...', action:()=>simBpPopup('my',slot,e) },
-    '---',
-    { icon:'🔄', label:slotObj.faceDown?'表向きにする':'伏せる', action:()=>simToggleFaceDown('my',slot) },
-    '---',
-    { section: `一番上のカード：${top?.detail?.name||top?.number||'?'}` },
-    { icon:'✋', label:'手札に戻す（一番上）', action:()=>simFieldTopToHand('my',slot) },
-    { icon:'⬆', label:'デッキ上に戻す（一番上）', action:()=>simFieldTopToDeckTop('my',slot) },
-    { icon:'⬇', label:'デッキ下に戻す（一番上）', action:()=>simFieldTopToDeckBottom('my',slot) },
-    { icon:'🗑', label:'トラッシュへ（一番上）', action:()=>simFieldTopToGrave('my',slot), danger:true },
-    '---',
-    { section: `一番下のカード：${bottom?.detail?.name||bottom?.number||'?'}` },
-    { icon:'✋', label:'手札に戻す（一番下）', action:()=>simFieldBottomToHand('my',slot) },
-    { icon:'⬆', label:'デッキ上に戻す（一番下）', action:()=>simFieldBottomToDeckTop('my',slot) },
-    { icon:'⬇', label:'デッキ下に戻す（一番下）', action:()=>simFieldBottomToDeckBottom('my',slot) },
-    { icon:'🗑', label:'トラッシュへ（一番下）', action:()=>simFieldBottomToGrave('my',slot), danger:true },
-    '---',
-    { icon:'🗑', label:'トラッシュへ（全スタック）', action:()=>simFieldToGrave('my',slot), danger:true },
-    { icon:'✕',  label:'ゲームから取り除く（全スタック）', action:()=>simFieldRemove('my',slot), danger:true },
-  ]);
+  const x = e?.clientX || Math.round(window.innerWidth/2);
+  const y = e?.clientY || Math.round(window.innerHeight/2);
+  simCtxMySlotMain(x, y, slot);
 }
 
 // ── CPUフィールドスロット右クリック ──
@@ -3249,6 +3233,138 @@ function simToggleFaceDown(owner, slot) {
 }
 
 // ── フィールド→各領域 ──
+
+
+function simGetFieldRefs(owner){
+  return {
+    field: owner==='my'?GS.fieldMy:GS.fieldCpu,
+    hand: owner==='my'?GS.handMy:GS.handCpu,
+    deck: owner==='my'?GS.deckMy:GS.deckCpu,
+    grave: owner==='my'?GS.graveMy:GS.graveCpu,
+  };
+}
+function simFieldLayerRemove(owner, slot, layerIndex){
+  const {field} = simGetFieldRefs(owner);
+  const slotObj = field[slot];
+  if(!slotObj || !slotObj.stack || !slotObj.stack.length) return null;
+  if(layerIndex < 0 || layerIndex >= slotObj.stack.length) return null;
+  const card = slotObj.stack.splice(layerIndex, 1)[0];
+  simNormalizeFieldSlotAfterRemove(field, slot);
+  return card;
+}
+function simFieldLayerToHand(owner, slot, layerIndex, layerLabel='指定層'){
+  simSnapshot();
+  const refs = simGetFieldRefs(owner);
+  const card = simFieldLayerRemove(owner, slot, layerIndex);
+  if(!card) return;
+  refs.hand.push(card);
+  simLog(`✋ 「${card.detail?.name||'?'}」→ ${owner==='my'?'自分の':'CPUの'}手札（${layerLabel}）`,'info');
+  simRenderAll();
+}
+function simFieldLayerToDeckTop(owner, slot, layerIndex, layerLabel='指定層'){
+  simSnapshot();
+  const refs = simGetFieldRefs(owner);
+  const card = simFieldLayerRemove(owner, slot, layerIndex);
+  if(!card) return;
+  refs.deck.unshift(card);
+  simLog(`⬆ 「${card.detail?.name||'?'}」→ デッキ上（${layerLabel}）`,'info');
+  simRenderAll();
+}
+function simFieldLayerToDeckBottom(owner, slot, layerIndex, layerLabel='指定層'){
+  simSnapshot();
+  const refs = simGetFieldRefs(owner);
+  const card = simFieldLayerRemove(owner, slot, layerIndex);
+  if(!card) return;
+  refs.deck.push(card);
+  simLog(`⬇ 「${card.detail?.name||'?'}」→ デッキ下（${layerLabel}）`,'info');
+  simRenderAll();
+}
+function simFieldLayerToGrave(owner, slot, layerIndex, layerLabel='指定層'){
+  simSnapshot();
+  const refs = simGetFieldRefs(owner);
+  const card = simFieldLayerRemove(owner, slot, layerIndex);
+  if(!card) return;
+  refs.grave.push(card);
+  simLog(`🗑 「${card.detail?.name||'?'}」→ トラッシュ（${layerLabel}）`,'warn');
+  simRenderAll();
+}
+
+function simLayerLabel(slotObj, layerIndex){
+  const total = slotObj?.stack?.length || 0;
+  if(total <= 0) return `${layerIndex+1}層目`;
+  if(layerIndex === 0) return `1層目（下）`;
+  if(layerIndex === total - 1) return `${total}層目（上）`;
+  return `${layerIndex+1}層目`;
+}
+
+function simCtxMySlotMain(x, y, slot){
+  if (!GS) return;
+  if (slot >= GS.activeBattleSlots) return;
+  const slotObj = GS.fieldMy[slot];
+  if (!slotObj) return;
+  const top = slotObj.stack[slotObj.stack.length-1];
+  const name = top.detail?.name||top.number;
+  simShowCtxAt(x, y, [
+    { section: `スロット${slot+1}：${name}` },
+    { icon:'🔍', label:'カード詳細', action:()=>openDetail(top.id) },
+    { icon:'⬆', label:'グレードUP（BPを1段階上げる）', action:()=>simGradeUp('my',slot) },
+    { icon:'⬇', label:'グレードDN（BPを1段階下げる）', action:()=>simGradeDown('my',slot) },
+    { icon:'💪', label:'BP増減...', action:()=>simBpPopup('my',slot,{clientX:x,clientY:y}) },
+    '---',
+    { icon:'🔄', label:slotObj.faceDown?'表向きにする':'伏せる', action:()=>simToggleFaceDown('my',slot) },
+    { icon:'🗂', label:'スタック操作 ▶', action:()=>simCtxMySlotStack(x,y,slot) },
+    '---',
+    { icon:'🗑', label:'トラッシュへ（全スタック）', action:()=>simFieldToGrave('my',slot), danger:true },
+    { icon:'✕',  label:'ゲームから取り除く（全スタック）', action:()=>simFieldRemove('my',slot), danger:true },
+  ]);
+}
+
+function simCtxMySlotStack(x,y,slot){
+  const slotObj = GS.fieldMy[slot];
+  if(!slotObj || !slotObj.stack?.length) return;
+  simShowCtxAt(x, y, [
+    { section:`スタック操作（${slotObj.stack.length}枚）` },
+    { icon:'⬆', label:'一番上のカード ▶', action:()=>simCtxMySlotLayerActions(x,y,slot,slotObj.stack.length-1,'一番上') },
+    { icon:'⬇', label:'一番下のカード ▶', action:()=>simCtxMySlotLayerActions(x,y,slot,0,'一番下') },
+    { icon:'🧱', label:'層を選択 ▶', action:()=>simCtxMySlotLayers(x,y,slot) },
+    '---',
+    { icon:'↩', label:'戻る', action:()=>simCtxMySlotMain(x,y,slot) },
+  ]);
+}
+
+function simCtxMySlotLayers(x,y,slot){
+  const slotObj = GS.fieldMy[slot];
+  if(!slotObj || !slotObj.stack?.length) return;
+  const items = [{section:'層を選択'}];
+  slotObj.stack.forEach((card, idx)=>{
+    const nm = card.detail?.name || card.number || '?';
+    items.push({icon:'🧩', label:`${simLayerLabel(slotObj, idx)}：${nm}`, action:()=>simCtxMySlotLayerActions(x,y,slot,idx,simLayerLabel(slotObj, idx))});
+  });
+  items.push('---');
+  items.push({icon:'↩', label:'戻る', action:()=>simCtxMySlotStack(x,y,slot)});
+  simShowCtxAt(x, y, items);
+}
+
+function simCtxMySlotLayerActions(x,y,slot,layerIndex,layerLabel){
+  const slotObj = GS.fieldMy[slot];
+  if(!slotObj || !slotObj.stack?.length) return;
+  const card = slotObj.stack[layerIndex];
+  const nm = card?.detail?.name || card?.number || '?';
+  simShowCtxAt(x, y, [
+    { section:`${layerLabel}：${nm}` },
+    { icon:'✋', label:'手札に戻す', action:()=>simFieldLayerToHand('my',slot,layerIndex,layerLabel) },
+    { icon:'⬆', label:'デッキ上に戻す', action:()=>simFieldLayerToDeckTop('my',slot,layerIndex,layerLabel) },
+    { icon:'⬇', label:'デッキ下に戻す', action:()=>simFieldLayerToDeckBottom('my',slot,layerIndex,layerLabel) },
+    { icon:'🗑', label:'トラッシュへ', action:()=>simFieldLayerToGrave('my',slot,layerIndex,layerLabel), danger:true },
+    '---',
+    { icon:'↩', label:'戻る', action:()=>{
+      const slotNow = GS.fieldMy[slot];
+      if(!slotNow || !slotNow.stack?.length) return;
+      if(layerLabel === '一番上' || layerLabel === '一番下') simCtxMySlotStack(x,y,slot);
+      else simCtxMySlotLayers(x,y,slot);
+    }},
+  ]);
+}
 
 function simNormalizeFieldSlotAfterRemove(field, slot){
   const slotObj = field[slot];
