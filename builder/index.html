@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-3.2.2 fixed layout final ===== */
+/* ===== vSolo-3.2.3 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-3.2.2 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-3.2.3 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 reveal modal tighter width + close returns cards */
+/* vSolo-3.2.3 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1651,7 +1651,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 ui rebalance + ctx open fix */
+/* vSolo-3.2.3 ui rebalance + ctx open fix */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:4px !important;
   padding-bottom:8px !important;
@@ -1712,7 +1712,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 tighter ops/log, more field */
+/* vSolo-3.2.3 tighter ops/log, more field */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:2px !important;
   padding-bottom:5px !important;
@@ -1779,7 +1779,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 visibility rebalance */
+/* vSolo-3.2.3 visibility rebalance */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:1px !important;
   padding-bottom:3px !important;
@@ -1869,7 +1869,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 bigger battle cards */
+/* vSolo-3.2.3 bigger battle cards */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:0 !important;
   padding-bottom:2px !important;
@@ -1935,7 +1935,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 reveal stage1 + charge badge */
+/* vSolo-3.2.3 reveal stage1 + charge badge */
 .fslot-charge{
   position:absolute;
   left:4px;
@@ -1962,7 +1962,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 charge list modal */
+/* vSolo-3.2.3 charge list modal */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2034,14 +2034,14 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 grave slot placement buttons */
+/* vSolo-3.2.3 grave slot placement buttons */
 .pca.field{
   white-space:normal !important;
   line-height:1.1 !important;
 }
 
 
-/* vSolo-3.2.2 charge modal fallback */
+/* vSolo-3.2.3 charge modal fallback */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2052,7 +2052,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 pending target bar */
+/* vSolo-3.2.3 pending target bar */
 .pending-target-bar{
   position:fixed;
   left:10px;
@@ -2091,7 +2091,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2.2 guaranteed overlays */
+/* vSolo-3.2.3 guaranteed overlays */
 .pending-target-bar{
   position:fixed; left:10px; right:10px; bottom:90px; z-index:450;
   display:flex; align-items:center; justify-content:space-between; gap:8px;
@@ -2122,7 +2122,7 @@ header{margin:0 !important;}
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-3.2.2</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-3.2.3</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -3453,6 +3453,9 @@ function simFieldClick(slot) {
     if (slot >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
     if (applyPendingRevealTarget(slot)) return;
   }
+  if (window.pendingGraveTargetAction) {
+    if (applyPendingGraveTarget(slot)) return;
+  }
   if (window.pendingPeekTargetAction) {
     if (applyPendingPeekTarget(slot)) return;
   }
@@ -4154,6 +4157,78 @@ function applyPendingChargeTopTarget(slot){
   return true;
 }
 
+
+window.pendingGraveTargetAction = null;
+
+function simGraveBeginToFieldTop(idx){
+  const arr = GS.graveMy || [];
+  const card = arr[idx];
+  if(!card) return;
+  window.pendingGraveTargetAction = { mode:'top', cardId: card.id || '', sourceIndex: idx };
+  window.pendingRevealTargetAction = null;
+  window.pendingPeekTargetAction = null;
+  window.pendingChargeTopTargetAction = null;
+  GS.selHand = null;
+  simClosePeek();
+  if(typeof simCloseCtx==='function') simCloseCtx();
+  if(typeof simRenderAll==='function') simRenderAll();
+  updatePendingTargetBar();
+  if(typeof toast==='function') toast('置き先スロットを選択してください（トラッシュ→上に置く）');
+}
+
+function simGraveBeginToFieldBottom(idx){
+  const arr = GS.graveMy || [];
+  const card = arr[idx];
+  if(!card) return;
+  window.pendingGraveTargetAction = { mode:'bottom', cardId: card.id || '', sourceIndex: idx };
+  window.pendingRevealTargetAction = null;
+  window.pendingPeekTargetAction = null;
+  window.pendingChargeTopTargetAction = null;
+  GS.selHand = null;
+  simClosePeek();
+  if(typeof simCloseCtx==='function') simCloseCtx();
+  if(typeof simRenderAll==='function') simRenderAll();
+  updatePendingTargetBar();
+  if(typeof toast==='function') toast('置き先スロットを選択してください（トラッシュ→下に置く）');
+}
+
+function applyPendingGraveTarget(slot){
+  const pending = window.pendingGraveTargetAction;
+  if(!pending || !GS) return false;
+  if(slot >= GS.activeBattleSlots){
+    if(typeof toast==='function') toast('未開放のバトルエリアです');
+    return true;
+  }
+  const grave = GS.graveMy || [];
+  let idx = grave.findIndex(c => (c?.id || '') === (pending.cardId || ''));
+  if(idx < 0 && Number.isInteger(pending.sourceIndex) && pending.sourceIndex < grave.length) idx = pending.sourceIndex;
+  const moved = idx >= 0 ? grave.splice(idx,1)[0] : null;
+  if(!moved){
+    window.pendingGraveTargetAction = null;
+    updatePendingTargetBar();
+    if(typeof toast==='function') toast('トラッシュ内の対象カードが見つかりませんでした');
+    return true;
+  }
+  simSnapshot();
+  const slotObj = GS.fieldMy[slot];
+  if(!slotObj){
+    GS.fieldMy[slot] = simBuildSlot(moved,false);
+    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」トラッシュ→スロット${slot+1}へ配置`,'info');
+  }else if(pending.mode==='top'){
+    slotObj.stack.push(moved);
+    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」トラッシュ→スロット${slot+1}の一番上へ`,'info');
+  }else{
+    slotObj.stack.unshift(moved);
+    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」トラッシュ→スロット${slot+1}の一番下へ`,'info');
+  }
+  window.pendingGraveTargetAction = null;
+  GS.selHand = null;
+  if(typeof simRenderAll==='function') simRenderAll();
+  updatePendingTargetBar();
+  if(typeof toast==='function') toast('トラッシュから配置しました');
+  return true;
+}
+
 function updatePendingTargetBar(){
   const bar = document.getElementById('pendingTargetBar');
   const txt = document.getElementById('pendingTargetText');
@@ -4164,10 +4239,14 @@ function updatePendingTargetBar(){
     if(a==='fieldTop') msg = '公開カードの置き先を選択してください（スロット上）';
     else if(a==='fieldBottom') msg = '公開カードの置き先を選択してください（スロット下）';
     else if(a==='charge') msg = '公開カードのチャージ先を選択してください';
+  }else if(window.pendingGraveTargetAction){
+    msg = window.pendingGraveTargetAction.mode==='top'
+      ? 'トラッシュの置き先を選択してください（スロット上）'
+      : 'トラッシュの置き先を選択してください（スロット下）';
   }else if(window.pendingPeekTargetAction){
     const m = window.pendingPeekTargetAction.mode;
-    msg = m==='top' ? 'トラッシュ/デッキの置き先を選択してください（スロット上）'
-                    : 'トラッシュ/デッキの置き先を選択してください（スロット下）';
+    msg = m==='top' ? 'デッキの置き先を選択してください（スロット上）'
+                    : 'デッキの置き先を選択してください（スロット下）';
   }else if(window.pendingChargeTopTargetAction){
     msg = 'チャージカードの重ね先を選択してください（スロット上）';
   }
@@ -4180,20 +4259,14 @@ function updatePendingTargetBar(){
 }
 
 function clearPendingTargetActions(){
+  if(window.pendingGraveTargetAction){
+    window.pendingGraveTargetAction = null;
+  }
   if(window.pendingPeekTargetAction && window.pendingPeekTargetAction.card){
     const p = window.pendingPeekTargetAction;
-    if(p.type==='grave'){
-      const arr = GS.graveMy || [];
-      const exists = arr.some(c => (c?.id || '') === (p.card?.id || ''));
-      if(!exists){
-        const restoreIdx = Math.max(0, Math.min(p.sourceIndex ?? arr.length, arr.length));
-        arr.splice(restoreIdx, 0, p.card);
-      }
-    }else{
-      const arr = p.type==='deck' ? GS.deckMy : GS.graveMy;
-      const restoreIdx = Math.max(0, Math.min(p.sourceIndex ?? arr.length, arr.length));
-      arr.splice(restoreIdx, 0, p.card);
-    }
+    const arr = p.type==='deck' ? GS.deckMy : GS.graveMy;
+    const restoreIdx = Math.max(0, Math.min(p.sourceIndex ?? arr.length, arr.length));
+    arr.splice(restoreIdx, 0, p.card);
   }
   if(window.pendingChargeTopTargetAction && window.pendingChargeTopTargetAction.card){
     const p = window.pendingChargeTopTargetAction;
@@ -4512,12 +4585,15 @@ function simRenderMyField() {
     }
     div.className=`fslot${isTgt?' targeted':''}`;
     div.onclick=(e)=>{
-      if(window.pendingRevealTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
+      if(window.pendingRevealTargetAction || window.pendingGraveTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
         if(e && e.preventDefault) e.preventDefault();
         if(e && e.stopPropagation) e.stopPropagation();
         if(window.pendingRevealTargetAction){
           if (i >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
           if(applyPendingRevealTarget(i)) return;
+        }
+        if(window.pendingGraveTargetAction){
+          if(applyPendingGraveTarget(i)) return;
         }
         if(window.pendingPeekTargetAction){
           if(applyPendingPeekTarget(i)) return;
@@ -4537,11 +4613,14 @@ function simRenderMyField() {
     };
     div.oncontextmenu=(e)=>{
       e.preventDefault();
-      if(window.pendingRevealTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
+      if(window.pendingRevealTargetAction || window.pendingGraveTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
         if(e && e.stopPropagation) e.stopPropagation();
         if(window.pendingRevealTargetAction){
           if (i >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
           if(applyPendingRevealTarget(i)) return;
+        }
+        if(window.pendingGraveTargetAction){
+          if(applyPendingGraveTarget(i)) return;
         }
         if(window.pendingPeekTargetAction){
           if(applyPendingPeekTarget(i)) return;
