@@ -928,6 +928,23 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
   .reveal-thumb{height:132px}
 }
 
+
+/* battle slot expansion */
+.slots-row,.cpu-slots-row{row-gap:6px}
+.fslot.inactive{border-style:dashed;border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.02);cursor:not-allowed;opacity:.55}
+.fslot.inactive:hover{border-color:rgba(255,255,255,.08);background:rgba(255,255,255,.02)}
+.fslot-lock{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--tx3)}
+.fslot-lock .lock-ico{font-size:16px;opacity:.75}
+.fslot-lock .lock-txt{font-size:9px;letter-spacing:.08em}
+.cpu-fslot.inactive{border-style:dashed;border-color:rgba(255,51,85,.14);background:rgba(255,51,85,.03);opacity:.5}
+.cpu-fslot.inactive .cpu-fslot-ph{background:transparent;color:rgba(255,51,85,.45)}
+@media (max-width: 540px){
+  .slots-row{gap:5px}
+  .cpu-slots-row{gap:5px}
+  .fslot{width:68px;height:96px}
+  .cpu-fslot{width:58px;height:80px}
+}
+
 </style>
 </head>
 <body>
@@ -1944,7 +1961,7 @@ const SIM_PHASES = [
   { id:'end',    label:'END',    desc:'エンドフェイズ：ターン終了時効果の処理' },
 ];
 const PHASE_IDS = SIM_PHASES.map(p=>p.id);
-const FIELD_SLOTS = 4;
+const FIELD_SLOTS = 10;
 const WIN_CONDITION = 3; // 3か所以上勝利で決着
 
 // ── ゲームステート ──
@@ -1966,8 +1983,9 @@ function makeGS(pDeck, cpuDeck) {
     handMy: [],
     handCpu: [],
     // フィールド：各スロットは null or { stack:[], faceDown:bool, bpMod:int, gradeUpCount:int, gradeDownCount:int }
-    fieldMy:  [null,null,null,null],
-    fieldCpu: [null,null,null,null],
+    fieldMy:  Array(FIELD_SLOTS).fill(null),
+    fieldCpu: Array(FIELD_SLOTS).fill(null),
+    activeBattleSlots: 3,
     // シーン
     sceneMy: null,
     sceneCpu: null,
@@ -1978,7 +1996,7 @@ function makeGS(pDeck, cpuDeck) {
     removedMy: [],
     removedCpu: [],
     // バトル結果（各スロット）
-    battleResults: [null,null,null,null], // 'win'|'lose'|'draw'|null
+    battleResults: Array(FIELD_SLOTS).fill(null), // 'win'|'lose'|'draw'|null
     wins: { my:0, cpu:0 },
     // 選択中の手札インデックス
     selHand: null,
@@ -2146,6 +2164,7 @@ function simKeepHand() {
   document.getElementById('simRedrawOverlay').classList.add('hidden');
   simLog('▶ ゲーム開始！初手6枚','sys');
   simLog(`─── ターン1 スタートフェイズ ───`,'sys');
+  simLog(`🧩 バトルエリア開始数 ${GS.activeBattleSlots}/${FIELD_SLOTS}`,'info');
   simRenderAll();
   simUpdatePhaseUI();
   simSetActionBar();
@@ -2194,6 +2213,10 @@ function simEndTurn() {
   simSnapshot();
   GS.turn++;
   GS.phase = 'start';
+  if (GS.turn >= 4 && GS.activeBattleSlots < FIELD_SLOTS) {
+    GS.activeBattleSlots += 1;
+    simLog(`🧩 バトルエリア自動拡張 → ${GS.activeBattleSlots}/${FIELD_SLOTS}`,'info');
+  }
   // エンドフェイズ処理：ターン終了時BPmodをリセット（要ルール確認のため手動クリアを推奨）
   simLog(`─── ターン${GS.turn} スタートフェイズ ───`,'sys');
   simUpdatePhaseUI();
@@ -2257,6 +2280,7 @@ function simHandClick(idx) {
 
 function simFieldClick(slot) {
   if (!GS || GS.selHand===null) return;
+  if (slot >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
   const card = GS.handMy[GS.selHand];
   if (!card) return;
 
@@ -2360,6 +2384,7 @@ function simShowCtx(e, items) {
 // ── 自フィールドスロット右クリック ──
 function simCtxMySlot(e, slot) {
   if (!GS) return;
+  if (slot >= GS.activeBattleSlots) return;
   const slotObj = GS.fieldMy[slot];
   if (!slotObj) return;
   const top = slotObj.stack[slotObj.stack.length-1];
@@ -2384,6 +2409,7 @@ function simCtxMySlot(e, slot) {
 // ── CPUフィールドスロット右クリック ──
 function simCtxCpuSlot(e, slot) {
   if (!GS) return;
+  if (slot >= GS.activeBattleSlots) return;
   const slotObj = GS.fieldCpu[slot];
   if (!slotObj) return;
   const top = slotObj.stack[slotObj.stack.length-1];
@@ -2685,7 +2711,7 @@ function simResolveBattle() {
   simSnapshot();
   simLog('══ 勝敗判定フェイズ ══','sys');
   const results=[];
-  for(let i=0;i<FIELD_SLOTS;i++){
+  for(let i=0;i<GS.activeBattleSlots;i++){
     const ms=GS.fieldMy[i], cs=GS.fieldCpu[i];
     if(!ms&&!cs){results.push({slot:i,res:'empty'});continue;}
     const myBP=ms?simGetBP(ms,'my'):0;
@@ -2778,7 +2804,7 @@ function simRenderHUD() {
   const deckBtn=document.getElementById('simDeckPeekBtn');
   if(deckBtn) deckBtn.textContent=`📚 デッキ(${GS.deckMy.length})`;
   const deckRemainInline=document.getElementById('simDeckRemainInline');
-  if(deckRemainInline) deckRemainInline.textContent=`山札残 ${GS.deckMy.length}枚`;
+  if(deckRemainInline) deckRemainInline.textContent=`山札残 ${GS.deckMy.length}枚 / 場 ${GS.activeBattleSlots}/${FIELD_SLOTS}`;
   const revealSub=document.getElementById('revealModalSub');
   if(revealSub && Array.isArray(GS.publicReveals)){
     revealSub.textContent = GS.publicReveals.length ? `${GS.publicReveals.length}枚公開中 / 山札残${GS.deckMy.length}枚` : `山札残${GS.deckMy.length}枚`;
@@ -2823,8 +2849,14 @@ function simRenderMyField() {
   const selCard=GS.selHand!==null?GS.handMy[GS.selHand]:null;
   for(let i=0;i<FIELD_SLOTS;i++){
     const slotObj=GS.fieldMy[i];
+    const isActive=i < GS.activeBattleSlots;
     const div=document.createElement('div');
-    // ターゲット表示
+    if(!isActive){
+      div.className='fslot inactive';
+      div.innerHTML=`<div class="fslot-lock"><div class="lock-ico">🔒</div><div class="lock-txt">LOCK</div><div class="lock-txt">S${i+1}</div></div>`;
+      el.appendChild(div);
+      continue;
+    }
     let isTgt=false;
     if(selCard&&!simIsScene(selCard)){
       if(!slotObj) isTgt=true;
@@ -2867,29 +2899,38 @@ function simRenderMyField() {
         </div>`;
       }
     } else {
-      div.innerHTML='<span style="font-size:8px;color:var(--tx3)">EMPTY</span>';
+      div.innerHTML=`<span style="font-size:8px;color:var(--tx3)">S${i+1}<br>EMPTY</span>`;
     }
     el.appendChild(div);
   }
-  document.getElementById('myFieldBP').textContent=`総BP: ${(totalBP/1000).toFixed(1)}k`;
+  document.getElementById('myFieldBP').textContent=`総BP: ${(totalBP/1000).toFixed(1)}k / 場 ${GS.activeBattleSlots}/${FIELD_SLOTS}`;
 }
 
 function simRenderCpuField() {
-  // CPU hand backs
   const hb=document.getElementById('cpuHandBack');
   hb.innerHTML='';
   GS.handCpu.forEach(()=>{const d=document.createElement('div');d.className='card-back-sm';d.textContent='🃏';hb.appendChild(d);});
-  document.getElementById('cpuHandLbl').textContent=`手札 ${GS.handCpu.length}枚`;
-  // CPU field
+  document.getElementById('cpuHandLbl').textContent=`手札 ${GS.handCpu.length}枚 / 場 ${GS.activeBattleSlots}/${FIELD_SLOTS}`;
   const fr=document.getElementById('cpuFieldRow');
   fr.innerHTML='';
   for(let i=0;i<FIELD_SLOTS;i++){
     const slotObj=GS.fieldCpu[i];
-    if(!slotObj){continue;}
+    const isActive=i < GS.activeBattleSlots;
     const div=document.createElement('div');
+    if(!isActive){
+      div.className='cpu-fslot inactive';
+      div.innerHTML=`<div class="cpu-fslot-ph">🔒</div><div class="cpu-fslot-bar"><div class="cpu-fslot-bp">S${i+1}</div></div>`;
+      fr.appendChild(div);
+      continue;
+    }
     div.className='cpu-fslot';
     div.onclick=(e)=>simCtxCpuSlot(e,i);
     div.oncontextmenu=(e)=>{e.preventDefault();simCtxCpuSlot(e,i);};
+    if(!slotObj){
+      div.innerHTML=`<div class="cpu-fslot-ph" style="font-size:10px;color:var(--tx3)">S${i+1}<br>EMPTY</div><div class="cpu-fslot-bar"><div class="cpu-fslot-bp">—</div></div>`;
+      fr.appendChild(div);
+      continue;
+    }
     if(slotObj.faceDown){
       div.innerHTML=`<div class="cpu-fslot-ph">🃏</div><div class="cpu-fslot-bar"><div class="cpu-fslot-bp">？</div></div>`;
     } else {
