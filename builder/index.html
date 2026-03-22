@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-2.5 fixed layout final ===== */
+/* ===== vSolo-2.6 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-2.5 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-2.6 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.5 reveal modal tighter width + close returns cards */
+/* vSolo-2.6 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1651,7 +1651,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.5 ui rebalance + ctx open fix */
+/* vSolo-2.6 ui rebalance + ctx open fix */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:4px !important;
   padding-bottom:8px !important;
@@ -1712,7 +1712,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.5 tighter ops/log, more field */
+/* vSolo-2.6 tighter ops/log, more field */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:2px !important;
   padding-bottom:5px !important;
@@ -1779,7 +1779,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.5 visibility rebalance */
+/* vSolo-2.6 visibility rebalance */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:1px !important;
   padding-bottom:3px !important;
@@ -1868,12 +1868,78 @@ header{margin:0 !important;}
   line-height:1.15 !important;
 }
 
+
+/* vSolo-2.6 bigger battle cards */
+.sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
+  padding-top:0 !important;
+  padding-bottom:2px !important;
+}
+.action-btn{
+  padding-top:7px !important;
+  padding-bottom:7px !important;
+}
+.sim-log, .log-wrap, #simLog, #simLogWrap, .sim-log-area, .sim-log-panel{
+  height:16px !important;
+  min-height:16px !important;
+  max-height:16px !important;
+  padding-top:1px !important;
+  padding-bottom:1px !important;
+  font-size:8px !important;
+}
+.sz.field-sz{
+  height:146px !important;
+  min-height:146px !important;
+  max-height:146px !important;
+}
+.my-field-scroll{
+  height:106px !important;
+  min-height:106px !important;
+  max-height:106px !important;
+}
+#myFieldRow{
+  height:106px !important;
+}
+.fslot{
+  width:66px !important;
+  height:106px !important;
+}
+.fslot-img,.fslot-ph{
+  height:78px !important;
+}
+.fslot-bar{
+  min-height:14px !important;
+  padding-top:1px !important;
+  padding-bottom:1px !important;
+}
+@media (max-width:540px){
+  .sz.field-sz{
+    height:138px !important;
+    min-height:138px !important;
+    max-height:138px !important;
+  }
+  .my-field-scroll{
+    height:100px !important;
+    min-height:100px !important;
+    max-height:100px !important;
+  }
+  #myFieldRow{
+    height:100px !important;
+  }
+  .fslot{
+    width:64px !important;
+    height:100px !important;
+  }
+  .fslot-img,.fslot-ph{
+    height:74px !important;
+  }
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.5</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.6</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -3360,7 +3426,7 @@ function simCtxHandCard(e, idx) {
   const isSelected = GS.selHand === idx;
   simShowCtx(e, [
     { section: card.detail?.name||card.number },
-    { icon:'🔍', label:'カード詳細', action:()=>openDetail(card) },
+    { icon:'🔍', label:'カード詳細', action:()=>simOpenDetailFromCard(card) },
     { icon:isSelected?'✅':'🎯', label:isSelected?'選択解除':'選択して配置準備', action:()=>{ GS.selHand = isSelected ? null : idx; simRenderAll(); } },
     '---',
     { icon:'🗑', label:'トラッシュへ', action:()=>{ simSnapshot(); GS.graveMy.push(GS.handMy.splice(idx,1)[0]); GS.selHand=null; simLog(`🗑 「${card.detail?.name||'?'}」手札→トラッシュ`,'warn'); simRenderAll(); } },
@@ -3454,6 +3520,13 @@ function simToggleFaceDown(owner, slot) {
 
 // ── フィールド→各領域 ──
 
+
+
+function simOpenDetailFromCard(card){
+  const targetCard = card;
+  simCloseCtx();
+  setTimeout(()=>openDetail(targetCard), 0);
+}
 
 function simGetFieldRefs(owner){
   return {
@@ -3571,7 +3644,7 @@ function simCtxMySlotLayerActions(x,y,slot,layerIndex,layerLabel){
   const nm = card?.detail?.name || card?.number || '?';
   simShowCtxAt(x, y, [
     { section:`${layerLabel}：${nm}` },
-    { icon:'🔍', label:'カード詳細', action:()=>openDetail(card) },
+    { icon:'🔍', label:'カード詳細', action:()=>simOpenDetailFromCard(card) },
     { icon:'✋', label:'手札に戻す', action:()=>simFieldLayerToHand('my',slot,layerIndex,layerLabel) },
     { icon:'⬆', label:'デッキ上に戻す', action:()=>simFieldLayerToDeckTop('my',slot,layerIndex,layerLabel) },
     { icon:'⬇', label:'デッキ下に戻す', action:()=>simFieldLayerToDeckBottom('my',slot,layerIndex,layerLabel) },
