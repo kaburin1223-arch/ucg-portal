@@ -1090,12 +1090,45 @@ body.sim-no-vertical, body.sim-no-vertical .app-shell{overflow:hidden;}
   border:0 !important;
   overflow:hidden !important;
 }
+
+/* vcheck + solo mode cleanup */
+#cpuArea, #simCpuArea, #opponentArea, #oppArea,
+.cpu-area, .sim-cpu-area, .opponent-area, .opp-area,
+#cpuHandBack, #cpuFieldRow, #cpuHandLbl,
+.sim-opp-area, .cpu-panel, .opp-panel,
+#cpuHeader, #cpuHead, #cpuBar, .cpu-header, .cpu-head, .cpu-bar,
+.opp-header, .opp-head, .opp-bar,
+[class*="cpu-label"], [class*="cpu-head"], [class*="cpu-title"],
+[class*="opp-label"], [class*="opp-head"], [class*="opp-title"]{
+  display:none !important;
+  height:0 !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  overflow:hidden !important;
+}
+.ver-chip{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:2px 8px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.35);
+  color:rgba(255,255,255,.92);
+  font-family:'Orbitron',sans-serif;
+  font-size:10px;font-weight:800;letter-spacing:.08em;
+  line-height:1;
+  background:rgba(0,0,0,.14);
+  margin-left:6px;
+}
+body.light .ver-chip{
+  color:#fff;border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.16);
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.1</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
