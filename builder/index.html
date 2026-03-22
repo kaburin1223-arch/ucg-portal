@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-2.9.1 fixed layout final ===== */
+/* ===== vSolo-3.0 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-2.9.1 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-3.0 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.9.1 reveal modal tighter width + close returns cards */
+/* vSolo-3.0 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1651,7 +1651,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.9.1 ui rebalance + ctx open fix */
+/* vSolo-3.0 ui rebalance + ctx open fix */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:4px !important;
   padding-bottom:8px !important;
@@ -1712,7 +1712,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.9.1 tighter ops/log, more field */
+/* vSolo-3.0 tighter ops/log, more field */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:2px !important;
   padding-bottom:5px !important;
@@ -1779,7 +1779,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.9.1 visibility rebalance */
+/* vSolo-3.0 visibility rebalance */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:1px !important;
   padding-bottom:3px !important;
@@ -1869,7 +1869,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.9.1 bigger battle cards */
+/* vSolo-3.0 bigger battle cards */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:0 !important;
   padding-bottom:2px !important;
@@ -1935,7 +1935,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.9.1 reveal stage1 + charge badge */
+/* vSolo-3.0 reveal stage1 + charge badge */
 .fslot-charge{
   position:absolute;
   left:4px;
@@ -1962,7 +1962,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.9.1 charge list modal */
+/* vSolo-3.0 charge list modal */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2034,14 +2034,14 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.9.1 grave slot placement buttons */
+/* vSolo-3.0 grave slot placement buttons */
 .pca.field{
   white-space:normal !important;
   line-height:1.1 !important;
 }
 
 
-/* vSolo-2.9.1 charge modal fallback */
+/* vSolo-3.0 charge modal fallback */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2051,12 +2051,51 @@ header{margin:0 !important;}
   padding:10px;
 }
 
+
+/* vSolo-3.0 pending target bar */
+.pending-target-bar{
+  position:fixed;
+  left:10px;
+  right:10px;
+  bottom:90px;
+  z-index:450;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid rgba(45,212,191,.45);
+  background:rgba(8,18,26,.92);
+  color:#d7fffa;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+}
+.pending-target-bar.hidden{display:none !important;}
+.pending-target-text{font-size:12px;font-weight:700;line-height:1.2;}
+.pending-target-cancel{
+  flex-shrink:0;
+  padding:7px 10px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+.pending-target-cancel:hover{background:rgba(255,255,255,.12);}
+@media (max-width:540px){
+  .pending-target-bar{bottom:82px;padding:7px 9px;}
+  .pending-target-text{font-size:11px;}
+  .pending-target-cancel{padding:6px 9px;font-size:10px;}
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.9.1</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-3.0</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -2558,6 +2597,7 @@ function goTab(name){
     document.getElementById('panel-'+n).classList.toggle('on',n===name);
   });
   if(name==='sim'&&GS) simRenderAll();
+updatePendingTargetBar();
 }
 
 // ═══════════════════════════════════════════
@@ -4036,14 +4076,51 @@ function simPeekToHand(type, idx) {
 
 window.pendingPeekTargetAction = null;
 
+function updatePendingTargetBar(){
+  const bar = document.getElementById('pendingTargetBar');
+  const txt = document.getElementById('pendingTargetText');
+  if(!bar || !txt) return;
+  let msg = '';
+  if(window.pendingRevealTargetAction){
+    const a = window.pendingRevealTargetAction.action;
+    if(a==='fieldTop') msg = '公開カードの置き先を選択してください（スロット上）';
+    else if(a==='fieldBottom') msg = '公開カードの置き先を選択してください（スロット下）';
+    else if(a==='charge') msg = '公開カードのチャージ先を選択してください';
+  }else if(window.pendingPeekTargetAction){
+    const m = window.pendingPeekTargetAction.mode;
+    msg = m==='top' ? 'トラッシュ/デッキの置き先を選択してください（スロット上）'
+                    : 'トラッシュ/デッキの置き先を選択してください（スロット下）';
+  }
+  if(msg){
+    txt.textContent = msg;
+    bar.classList.remove('hidden');
+  }else{
+    bar.classList.add('hidden');
+  }
+}
+
+function clearPendingTargetActions(){
+  window.pendingRevealTargetAction = null;
+  window.pendingPeekTargetAction = null;
+  if(typeof GS!=='undefined' && GS){
+    GS.selHand = null;
+    if(typeof simRenderAll==='function') simRenderAll();
+  }
+  updatePendingTargetBar();
+  if(typeof toast==='function') toast('置き先選択をキャンセルしました');
+}
+
 function simPeekBeginToFieldTop(type, idx){
   const arr = type==='deck' ? GS.deckMy : GS.graveMy;
   const card = arr[idx];
   if(!card) return;
   window.pendingPeekTargetAction = { type, idx, cardId: card.id || '', mode:'top' };
+  window.pendingRevealTargetAction = null;
   GS.selHand = null;
   simClosePeek();
+  if(typeof simCloseCtx==='function') simCloseCtx();
   if(typeof simRenderAll==='function') simRenderAll();
+  updatePendingTargetBar();
   if(typeof toast==='function') toast('置き先スロットを選択してください（上に置く）');
 }
 
@@ -4052,9 +4129,12 @@ function simPeekBeginToFieldBottom(type, idx){
   const card = arr[idx];
   if(!card) return;
   window.pendingPeekTargetAction = { type, idx, cardId: card.id || '', mode:'bottom' };
+  window.pendingRevealTargetAction = null;
   GS.selHand = null;
   simClosePeek();
+  if(typeof simCloseCtx==='function') simCloseCtx();
   if(typeof simRenderAll==='function') simRenderAll();
+  updatePendingTargetBar();
   if(typeof toast==='function') toast('置き先スロットを選択してください（下に置く）');
 }
 
@@ -4074,6 +4154,7 @@ function simApplyPendingPeekTarget(slot){
   const card = arr[realIdx];
   if(!card){
     window.pendingPeekTargetAction = null;
+    updatePendingTargetBar();
     if(typeof toast==='function') toast('対象カードが見つかりませんでした');
     return true;
   }
@@ -4093,6 +4174,7 @@ function simApplyPendingPeekTarget(slot){
   window.pendingPeekTargetAction = null;
   GS.selHand = null;
   simRenderAll();
+  updatePendingTargetBar();
   return true;
 }
 
@@ -4591,6 +4673,8 @@ function beginRevealTargetAction(index, action){
   const arr = getRevealCards();
   if(index==null || index<0 || index>=arr.length) return;
   window.pendingRevealTargetAction = { index, action };
+  window.pendingPeekTargetAction = null;
+  if(typeof GS!=='undefined' && GS) GS.selHand = null;
   closeRevealActionMenu();
   closeRevealModal(null, { keepReveals:true });
   const msgMap = {
@@ -4598,6 +4682,8 @@ function beginRevealTargetAction(index, action){
     fieldBottom:'置き先のスロットを選択してください（下に置く）',
     charge:'チャージ先のスロットを選択してください'
   };
+  updatePendingTargetBar();
+  if(typeof simRenderAll==='function') simRenderAll();
   if(typeof toast==='function') toast(msgMap[action] || '置き先スロットを選択してください');
 }
 
@@ -4619,6 +4705,7 @@ function applyPendingRevealTarget(slotIndex){
   const card = arr[pending.index];
   if(!card){
     window.pendingRevealTargetAction = null;
+    updatePendingTargetBar();
     return false;
   }
   const action = pending.action;
@@ -4660,6 +4747,8 @@ function applyPendingRevealTarget(slotIndex){
   }
 
   window.pendingRevealTargetAction = null;
+  GS.selHand = null;
+  updatePendingTargetBar();
   if(typeof simRenderAll==='function') simRenderAll();
   renderRevealCards();
   if(arr.length) openRevealModal();
@@ -4802,7 +4891,14 @@ function simCtxMySlotCharge(x,y,slot){
     { section:`チャージ操作（${count}枚）` },
     { icon:'⚡', label:'チャージ一覧を開く', action:()=>{
       simCloseCtx();
-      requestAnimationFrame(()=>openChargeModal(slot));
+      window.__openChargeModalAfterCtx = slot;
+      setTimeout(()=>{
+        if(window.__openChargeModalAfterCtx!==null && window.__openChargeModalAfterCtx!==undefined){
+          const s = window.__openChargeModalAfterCtx;
+          window.__openChargeModalAfterCtx = null;
+          openChargeModal(s);
+        }
+      }, 30);
     }},
     '---',
     { icon:'↩', label:'戻る', action:()=>simCtxMySlotMain(x,y,slot) },
@@ -4812,7 +4908,11 @@ function simCtxMySlotCharge(x,y,slot){
 function closeChargeModal(e){
   if(e && e.target && e.target.id!=='chargeModal') return;
   const ov=document.getElementById('chargeModal');
-  if(ov) ov.classList.remove('open');
+  if(ov){
+    ov.classList.remove('open');
+    ov.style.opacity = '';
+    ov.style.pointerEvents = '';
+  }
 }
 
 function renderChargeList(slot){
@@ -4854,7 +4954,13 @@ function openChargeModal(slot){
   window.chargeModalSlot = slot;
   renderChargeList(slot);
   const ov=document.getElementById('chargeModal');
-  if(ov) ov.classList.add('open');
+  if(!ov){
+    if(typeof toast==='function') toast('チャージ一覧モーダルが見つかりません');
+    return;
+  }
+  ov.classList.add('open');
+  ov.style.opacity = '1';
+  ov.style.pointerEvents = 'all';
 }
 
 function simGetChargeCard(slot, idx){
