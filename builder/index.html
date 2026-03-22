@@ -945,6 +945,28 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
   .cpu-fslot{width:58px;height:80px}
 }
 
+
+/* self field focus layout */
+.sim-opp-area{display:none !important;}
+.my-field-scroll{
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:4px;
+}
+.my-field-scroll::-webkit-scrollbar{height:4px}
+.my-field-scroll::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:4px}
+.slots-row{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  justify-content:flex-end;
+  min-width:max-content;
+  gap:8px;
+}
+@media (max-width:540px){
+  .slots-row{gap:6px}
+}
+
 </style>
 </head>
 <body>
@@ -2847,16 +2869,10 @@ function simRenderMyField() {
   el.innerHTML='';
   let totalBP=0;
   const selCard=GS.selHand!==null?GS.handMy[GS.selHand]:null;
-  for(let i=0;i<FIELD_SLOTS;i++){
+  for(let order=GS.activeBattleSlots-1; order>=0; order--){
+    const i=order;
     const slotObj=GS.fieldMy[i];
-    const isActive=i < GS.activeBattleSlots;
     const div=document.createElement('div');
-    if(!isActive){
-      div.className='fslot inactive';
-      div.innerHTML=`<div class="fslot-lock"><div class="lock-ico">🔒</div><div class="lock-txt">LOCK</div><div class="lock-txt">S${i+1}</div></div>`;
-      el.appendChild(div);
-      continue;
-    }
     let isTgt=false;
     if(selCard&&!simIsScene(selCard)){
       if(!slotObj) isTgt=true;
@@ -2908,41 +2924,11 @@ function simRenderMyField() {
 
 function simRenderCpuField() {
   const hb=document.getElementById('cpuHandBack');
-  hb.innerHTML='';
-  GS.handCpu.forEach(()=>{const d=document.createElement('div');d.className='card-back-sm';d.textContent='🃏';hb.appendChild(d);});
-  document.getElementById('cpuHandLbl').textContent=`手札 ${GS.handCpu.length}枚 / 場 ${GS.activeBattleSlots}/${FIELD_SLOTS}`;
+  if(hb) hb.innerHTML='';
+  const lbl=document.getElementById('cpuHandLbl');
+  if(lbl) lbl.textContent='';
   const fr=document.getElementById('cpuFieldRow');
-  fr.innerHTML='';
-  for(let i=0;i<FIELD_SLOTS;i++){
-    const slotObj=GS.fieldCpu[i];
-    const isActive=i < GS.activeBattleSlots;
-    const div=document.createElement('div');
-    if(!isActive){
-      div.className='cpu-fslot inactive';
-      div.innerHTML=`<div class="cpu-fslot-ph">🔒</div><div class="cpu-fslot-bar"><div class="cpu-fslot-bp">S${i+1}</div></div>`;
-      fr.appendChild(div);
-      continue;
-    }
-    div.className='cpu-fslot';
-    div.onclick=(e)=>simCtxCpuSlot(e,i);
-    div.oncontextmenu=(e)=>{e.preventDefault();simCtxCpuSlot(e,i);};
-    if(!slotObj){
-      div.innerHTML=`<div class="cpu-fslot-ph" style="font-size:10px;color:var(--tx3)">S${i+1}<br>EMPTY</div><div class="cpu-fslot-bar"><div class="cpu-fslot-bp">—</div></div>`;
-      fr.appendChild(div);
-      continue;
-    }
-    if(slotObj.faceDown){
-      div.innerHTML=`<div class="cpu-fslot-ph">🃏</div><div class="cpu-fslot-bar"><div class="cpu-fslot-bp">？</div></div>`;
-    } else {
-      const top=slotObj.stack[slotObj.stack.length-1];
-      const bp=simGetBP(slotObj,'cpu');
-      const thumb=top.detail?.thumbnail_image_url||'';
-      div.innerHTML=`${thumb?`<img class="cpu-fslot-img" src="${thumb}">`:`<div class="cpu-fslot-ph">${simFe(top.feature?.value)}</div>`}
-        <div class="cpu-fslot-bar"><div class="cpu-fslot-bp">${(bp/1000).toFixed(1)}k</div></div>
-        ${slotObj.stack.length>1?`<div class="cpu-fslot-cnt">×${slotObj.stack.length}</div>`:''}`;
-    }
-    fr.appendChild(div);
-  }
+  if(fr) fr.innerHTML='';
 }
 
 function simRenderReveal() {
