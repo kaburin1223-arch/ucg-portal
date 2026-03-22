@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-2.8 fixed layout final ===== */
+/* ===== vSolo-2.9 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-2.8 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-2.9 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.8 reveal modal tighter width + close returns cards */
+/* vSolo-2.9 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1651,7 +1651,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.8 ui rebalance + ctx open fix */
+/* vSolo-2.9 ui rebalance + ctx open fix */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:4px !important;
   padding-bottom:8px !important;
@@ -1712,7 +1712,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.8 tighter ops/log, more field */
+/* vSolo-2.9 tighter ops/log, more field */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:2px !important;
   padding-bottom:5px !important;
@@ -1779,7 +1779,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.8 visibility rebalance */
+/* vSolo-2.9 visibility rebalance */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:1px !important;
   padding-bottom:3px !important;
@@ -1869,7 +1869,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.8 bigger battle cards */
+/* vSolo-2.9 bigger battle cards */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:0 !important;
   padding-bottom:2px !important;
@@ -1935,7 +1935,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.8 reveal stage1 + charge badge */
+/* vSolo-2.9 reveal stage1 + charge badge */
 .fslot-charge{
   position:absolute;
   left:4px;
@@ -1962,7 +1962,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.8 charge list modal */
+/* vSolo-2.9 charge list modal */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2033,12 +2033,19 @@ header{margin:0 !important;}
   .charge-sub{font-size:8px;}
 }
 
+
+/* vSolo-2.9 grave slot placement buttons */
+.pca.field{
+  white-space:normal !important;
+  line-height:1.1 !important;
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.8</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.9</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -3368,6 +3375,9 @@ function simFieldClick(slot) {
     if (slot >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
     if (applyPendingRevealTarget(slot)) return;
   }
+  if (window.pendingPeekTargetAction) {
+    if (applyPendingPeekTarget(slot)) return;
+  }
   if (!GS || GS.selHand===null) return;
   if (slot >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
   const card = GS.handMy[GS.selHand];
@@ -3990,7 +4000,8 @@ function simOpenPeek(type) {
         </div>
         <div class="peek-acts">
           <button class="pca hand" onclick="simPeekToHand('${type}',${realIdx});simOpenPeek('${type}')">手札へ</button>
-          ${type==='grave'?`<button class="pca field" onclick="simPeekToField('${type}',${realIdx});simOpenPeek('${type}')">フィールドへ</button>`:''}
+          ${type==='grave'?`<button class="pca field" onclick="simPeekBeginToFieldTop('${type}',${realIdx})">スロット上へ</button>`:''}
+          ${type==='grave'?`<button class="pca field" onclick="simPeekBeginToFieldBottom('${type}',${realIdx})">スロット下へ</button>`:''}
           ${type==='grave'?`<button class="pca" onclick="simPeekToDeckTop('${type}',${realIdx});simOpenPeek('${type}')">デッキ上へ</button>`:''}
           ${type==='grave'?`<button class="pca" onclick="simPeekToDeckBottom('${type}',${realIdx});simOpenPeek('${type}')">デッキ下へ</button>`:''}
           ${type==='deck'?`<button class="pca grave" onclick="simPeekToGrave('${type}',${realIdx});simOpenPeek('${type}')">トラッシュへ</button>`:''}
@@ -4011,6 +4022,52 @@ function simPeekToHand(type, idx) {
   simLog(`📥 「${card.detail?.name||'?'}」${type==='deck'?'デッキ':'トラッシュ'}→手札`,'draw');
   simRenderAll();
 }
+
+window.pendingPeekTargetAction = null;
+
+function simPeekBeginToFieldTop(type, idx){
+  window.pendingPeekTargetAction = { type, idx, mode:'top' };
+  simClosePeek();
+  if(typeof toast==='function') toast('置き先スロットを選択してください（上に置く）');
+}
+
+function simPeekBeginToFieldBottom(type, idx){
+  window.pendingPeekTargetAction = { type, idx, mode:'bottom' };
+  simClosePeek();
+  if(typeof toast==='function') toast('置き先スロットを選択してください（下に置く）');
+}
+
+function simApplyPendingPeekTarget(slot){
+  const pending = window.pendingPeekTargetAction;
+  if(!pending || !GS) return false;
+  if(slot >= GS.activeBattleSlots){
+    if(typeof toast==='function') toast('未開放のバトルエリアです');
+    return true;
+  }
+  const arr = pending.type==='deck' ? GS.deckMy : GS.graveMy;
+  const card = arr[pending.idx];
+  if(!card){
+    window.pendingPeekTargetAction = null;
+    return false;
+  }
+  simSnapshot();
+  const moved = arr.splice(pending.idx,1)[0];
+  const slotObj = GS.fieldMy[slot];
+  if(!slotObj){
+    GS.fieldMy[slot] = simBuildSlot(moved,false);
+    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」→ スロット${slot+1}へ配置`,'info');
+  }else if(pending.mode==='top'){
+    slotObj.stack.push(moved);
+    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」→ スロット${slot+1}の一番上へ`,'info');
+  }else{
+    slotObj.stack.unshift(moved);
+    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」→ スロット${slot+1}の一番下へ`,'info');
+  }
+  window.pendingPeekTargetAction = null;
+  simRenderAll();
+  return true;
+}
+
 function simPeekToField(type, idx) {
   simSnapshot();
   const arr = type==='deck'?GS.deckMy:GS.graveMy;
@@ -4220,7 +4277,7 @@ function simRenderMyField() {
         simFieldClick(i);
         return;
       }
-      if(window.pendingRevealTargetAction){ simFieldClick(i); return; }
+      if(window.pendingRevealTargetAction || window.pendingPeekTargetAction){ simFieldClick(i); return; }
       if(slotNow){ simCtxMySlot(e,i); } else { simFieldClick(i); }
     };
     div.oncontextmenu=(e)=>{e.preventDefault();simCtxMySlot(e,i);};
@@ -4712,7 +4769,7 @@ function simCtxMySlotCharge(x,y,slot){
   const count = slotObj?.chargeStack?.length || 0;
   simShowCtxAt(x, y, [
     { section:`チャージ操作（${count}枚）` },
-    { icon:'⚡', label:'チャージ一覧を開く', action:()=>openChargeModal(slot) },
+    { icon:'⚡', label:'チャージ一覧を開く', action:()=>setTimeout(()=>openChargeModal(slot),0) },
     '---',
     { icon:'↩', label:'戻る', action:()=>simCtxMySlotMain(x,y,slot) },
   ]);
