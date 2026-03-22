@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-3.1 fixed layout final ===== */
+/* ===== vSolo-3.2 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-3.1 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-3.2 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 reveal modal tighter width + close returns cards */
+/* vSolo-3.2 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1651,7 +1651,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 ui rebalance + ctx open fix */
+/* vSolo-3.2 ui rebalance + ctx open fix */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:4px !important;
   padding-bottom:8px !important;
@@ -1712,7 +1712,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 tighter ops/log, more field */
+/* vSolo-3.2 tighter ops/log, more field */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:2px !important;
   padding-bottom:5px !important;
@@ -1779,7 +1779,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 visibility rebalance */
+/* vSolo-3.2 visibility rebalance */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:1px !important;
   padding-bottom:3px !important;
@@ -1869,7 +1869,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 bigger battle cards */
+/* vSolo-3.2 bigger battle cards */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:0 !important;
   padding-bottom:2px !important;
@@ -1935,7 +1935,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 reveal stage1 + charge badge */
+/* vSolo-3.2 reveal stage1 + charge badge */
 .fslot-charge{
   position:absolute;
   left:4px;
@@ -1962,7 +1962,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 charge list modal */
+/* vSolo-3.2 charge list modal */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2034,14 +2034,14 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 grave slot placement buttons */
+/* vSolo-3.2 grave slot placement buttons */
 .pca.field{
   white-space:normal !important;
   line-height:1.1 !important;
 }
 
 
-/* vSolo-3.1 charge modal fallback */
+/* vSolo-3.2 charge modal fallback */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2052,7 +2052,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 pending target bar */
+/* vSolo-3.2 pending target bar */
 .pending-target-bar{
   position:fixed;
   left:10px;
@@ -2091,7 +2091,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.1 guaranteed overlays */
+/* vSolo-3.2 guaranteed overlays */
 .pending-target-bar{
   position:fixed; left:10px; right:10px; bottom:90px; z-index:450;
   display:flex; align-items:center; justify-content:space-between; gap:8px;
@@ -2122,7 +2122,7 @@ header{margin:0 !important;}
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-3.1</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-3.2</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -3456,6 +3456,9 @@ function simFieldClick(slot) {
   if (window.pendingPeekTargetAction) {
     if (applyPendingPeekTarget(slot)) return;
   }
+  if (window.pendingChargeTopTargetAction) {
+    if (applyPendingChargeTopTarget(slot)) return;
+  }
   if (!GS || GS.selHand===null) return;
   if (slot >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
   const card = GS.handMy[GS.selHand];
@@ -4103,6 +4106,55 @@ function simPeekToHand(type, idx) {
 
 window.pendingPeekTargetAction = null;
 
+
+window.pendingChargeTopTargetAction = null;
+
+function beginChargeTopTarget(slot, idx){
+  const slotObj = GS.fieldMy[slot];
+  const arr = slotObj?.chargeStack || [];
+  if(idx < 0 || idx >= arr.length) return;
+  const moved = arr.splice(idx,1)[0];
+  window.pendingChargeTopTargetAction = { card:moved, sourceSlot:slot, sourceIndex:idx };
+  window.pendingRevealTargetAction = null;
+  window.pendingChargeTopTargetAction = null;
+  window.pendingPeekTargetAction = null;
+  GS.selHand = null;
+  closeChargeModal();
+  if(typeof simRenderAll==='function') simRenderAll();
+  updatePendingTargetBar();
+  if(typeof toast==='function') toast('重ね先スロットを選択してください（チャージ→一番上）');
+}
+
+function applyPendingChargeTopTarget(slot){
+  const pending = window.pendingChargeTopTargetAction;
+  if(!pending || !GS) return false;
+  if(slot >= GS.activeBattleSlots){
+    if(typeof toast==='function') toast('未開放のバトルエリアです');
+    return true;
+  }
+  const moved = pending.card;
+  if(!moved){
+    window.pendingChargeTopTargetAction = null;
+    updatePendingTargetBar();
+    return true;
+  }
+  simSnapshot();
+  const slotObj = GS.fieldMy[slot];
+  if(!slotObj){
+    GS.fieldMy[slot] = simBuildSlot(moved,false);
+    if(typeof simLog==='function') simLog(`⚡ 「${moved.detail?.name||'?'}」→ スロット${slot+1}へ配置`,'info');
+  }else{
+    slotObj.stack.push(moved);
+    if(typeof simLog==='function') simLog(`⚡ 「${moved.detail?.name||'?'}」→ スロット${slot+1}の一番上へ`,'info');
+  }
+  window.pendingChargeTopTargetAction = null;
+  GS.selHand = null;
+  simRenderAll();
+  updatePendingTargetBar();
+  if(window.chargeModalSlot!==undefined && window.chargeModalSlot!==null) openChargeModal(window.chargeModalSlot);
+  return true;
+}
+
 function updatePendingTargetBar(){
   const bar = document.getElementById('pendingTargetBar');
   const txt = document.getElementById('pendingTargetText');
@@ -4117,6 +4169,8 @@ function updatePendingTargetBar(){
     const m = window.pendingPeekTargetAction.mode;
     msg = m==='top' ? 'トラッシュ/デッキの置き先を選択してください（スロット上）'
                     : 'トラッシュ/デッキの置き先を選択してください（スロット下）';
+  }else if(window.pendingChargeTopTargetAction){
+    msg = 'チャージカードの重ね先を選択してください（スロット上）';
   }
   if(msg){
     txt.textContent = msg;
@@ -4133,8 +4187,19 @@ function clearPendingTargetActions(){
     const restoreIdx = Math.max(0, Math.min(p.sourceIndex ?? arr.length, arr.length));
     arr.splice(restoreIdx, 0, p.card);
   }
+  if(window.pendingChargeTopTargetAction && window.pendingChargeTopTargetAction.card){
+    const p = window.pendingChargeTopTargetAction;
+    const slotObj = GS.fieldMy[p.sourceSlot];
+    if(slotObj){
+      if(!slotObj.chargeStack) slotObj.chargeStack = [];
+      const restoreIdx = Math.max(0, Math.min(p.sourceIndex ?? slotObj.chargeStack.length, slotObj.chargeStack.length));
+      slotObj.chargeStack.splice(restoreIdx, 0, p.card);
+    }
+  }
   window.pendingRevealTargetAction = null;
+  window.pendingChargeTopTargetAction = null;
   window.pendingPeekTargetAction = null;
+  window.pendingChargeTopTargetAction = null;
   if(typeof GS!=='undefined' && GS){
     GS.selHand = null;
     if(typeof simRenderAll==='function') simRenderAll();
@@ -4409,13 +4474,13 @@ function simRenderMyField() {
     }
     div.className=`fslot${isTgt?' targeted':''}`;
     div.onclick=(e)=>{
-      const sel=GS.selHand!==null?GS.handMy[GS.selHand]:null;
-      const slotNow=GS.fieldMy[i];
-      if(sel && GS.phase==='lv' && slotNow && !simIsScene(sel) && slotNow.stack.length<3 && simCanStack(sel, slotNow.stack[slotNow.stack.length-1])){
+      if(window.pendingRevealTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
         simFieldClick(i);
         return;
       }
-      if(window.pendingRevealTargetAction || window.pendingPeekTargetAction){
+      const sel=GS.selHand!==null?GS.handMy[GS.selHand]:null;
+      const slotNow=GS.fieldMy[i];
+      if(sel && GS.phase==='lv' && slotNow && !simIsScene(sel) && slotNow.stack.length<3 && simCanStack(sel, slotNow.stack[slotNow.stack.length-1])){
         simFieldClick(i);
         return;
       }
@@ -5035,19 +5100,7 @@ function simChargeToGrave(slot, idx){
 }
 
 function simChargeToTopStack(slot, idx){
-  const card = simGetChargeCard(slot, idx);
-  if(!card) return;
-  const slotObj = GS.fieldMy[slot];
-  if(!slotObj || !slotObj.stack || !slotObj.stack.length){
-    if(typeof toast==='function') toast('通常スタックがないため重ねられません');
-    return;
-  }
-  simSnapshot();
-  const moved = simRemoveChargeCard(slot, idx);
-  slotObj.stack.push(moved);
-  simLog(`⚡ ${moved.detail?.name||moved.number||'チャージカード'} をスロット${slot+1}の一番上に重ねた`,'info');
-  simRenderAll();
-  renderChargeList(slot);
+  beginChargeTopTarget(slot, idx);
 }
 
 // ═══════════════════════════════════════════
