@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-2.6.2 fixed layout final ===== */
+/* ===== vSolo-2.7 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-2.6.2 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-2.7 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.6.2 reveal modal tighter width + close returns cards */
+/* vSolo-2.7 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1651,7 +1651,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.6.2 ui rebalance + ctx open fix */
+/* vSolo-2.7 ui rebalance + ctx open fix */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:4px !important;
   padding-bottom:8px !important;
@@ -1712,7 +1712,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.6.2 tighter ops/log, more field */
+/* vSolo-2.7 tighter ops/log, more field */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:2px !important;
   padding-bottom:5px !important;
@@ -1779,7 +1779,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.6.2 visibility rebalance */
+/* vSolo-2.7 visibility rebalance */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:1px !important;
   padding-bottom:3px !important;
@@ -1869,7 +1869,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.6.2 bigger battle cards */
+/* vSolo-2.7 bigger battle cards */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:0 !important;
   padding-bottom:2px !important;
@@ -1934,12 +1934,39 @@ header{margin:0 !important;}
   }
 }
 
+
+/* vSolo-2.7 reveal stage1 + charge badge */
+.fslot-charge{
+  position:absolute;
+  left:4px;
+  right:4px;
+  bottom:-10px;
+  padding:1px 5px;
+  border-radius:999px;
+  background:rgba(45,212,191,.16);
+  border:1px solid rgba(45,212,191,.45);
+  color:var(--sc);
+  font-size:8px;
+  font-weight:800;
+  line-height:1.2;
+  text-align:center;
+  white-space:nowrap;
+}
+.fslot-inner{position:relative; overflow:visible !important;}
+.reveal-action-sheet #revealActionButtons{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+@media (max-width:540px){
+  .fslot-charge{font-size:7px; bottom:-9px;}
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.6.2</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.7</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -2404,6 +2431,9 @@ header{margin:0 !important;}
       <button class="reveal-btn" type="button" onclick="resolveRevealCardMenu('hand')">手札に加える</button>
       <button class="reveal-btn" type="button" onclick="resolveRevealCardMenu('top')">デッキ上に戻す</button>
       <button class="reveal-btn" type="button" onclick="resolveRevealCardMenu('bottom')">デッキ下に戻す</button>
+      <button class="reveal-btn" type="button" onclick="resolveRevealCardMenu('fieldTop')">スロット上に置く</button>
+      <button class="reveal-btn" type="button" onclick="resolveRevealCardMenu('fieldBottom')">スロット下に置く</button>
+      <button class="reveal-btn" type="button" onclick="resolveRevealCardMenu('charge')">チャージ</button>
       <button class="reveal-btn danger" type="button" onclick="resolveRevealCardMenu('trash')">トラッシュする</button>
     </div>
   </div>
@@ -3026,7 +3056,7 @@ function simGetBP(slot, owner) {
   return Math.max(0, base + (slot.bpMod||0) + sceneBonus);
 }
 function simBuildSlot(card, faceDown=true) {
-  return { stack:[card], faceDown, bpMod:0, gradeUpCount:0, gradeDownCount:0 };
+  return { stack:[card], chargeStack:[], faceDown, bpMod:0, gradeUpCount:0, gradeDownCount:0 };
 }
 
 // ── デッキ構築（ビルダーから） ──
@@ -3262,6 +3292,10 @@ function simHandClick(idx) {
 }
 
 function simFieldClick(slot) {
+  if (window.pendingRevealTargetAction) {
+    if (slot >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
+    if (applyPendingRevealTarget(slot)) return;
+  }
   if (!GS || GS.selHand===null) return;
   if (slot >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
   const card = GS.handMy[GS.selHand];
@@ -4113,6 +4147,7 @@ function simRenderMyField() {
         simFieldClick(i);
         return;
       }
+      if(window.pendingRevealTargetAction){ simFieldClick(i); return; }
       if(slotNow){ simCtxMySlot(e,i); } else { simFieldClick(i); }
     };
     div.oncontextmenu=(e)=>{e.preventDefault();simCtxMySlot(e,i);};
@@ -4123,6 +4158,7 @@ function simRenderMyField() {
           <div class="fslot-ph" style="background:linear-gradient(135deg,#1a0a2a,#0a1020);font-size:28px">🃏</div>
           <div class="fslot-bar"><div class="fslot-stage">FACE DN</div></div>
           ${slotObj.stack.length>1?`<div class="fslot-cnt">×${slotObj.stack.length}</div>`:''}
+          ${slotObj.chargeStack&&slotObj.chargeStack.length?`<div class="fslot-charge">CHARGE ×${slotObj.chargeStack.length}</div>`:''}
         </div>`;
       } else {
         const bp=simGetBP(slotObj,'my');
@@ -4139,6 +4175,7 @@ function simRenderMyField() {
             ${mod?`<div class="fslot-mod" style="color:${mod>0?'var(--grn)':'var(--red)'};">${mod>0?'+':''}${(mod/1000).toFixed(1)}k</div>`:''}
           </div>
           ${slotObj.stack.length>1?`<div class="fslot-cnt">×${slotObj.stack.length}</div>`:''}
+          ${slotObj.chargeStack&&slotObj.chargeStack.length?`<div class="fslot-charge">CHARGE ×${slotObj.chargeStack.length}</div>`:''}
         </div>`;
       }
     } else {
@@ -4302,9 +4339,10 @@ function openRevealModal(){
   if(ov) ov.classList.add('open');
   renderRevealCards();
 }
-function closeRevealModal(e){
+function closeRevealModal(e, opts={}){
   if(e && e.target && e.target.id!=='revealModal') return;
-  if(typeof GS !== 'undefined' && GS && Array.isArray(GS.publicReveals) && GS.publicReveals.length){
+  const keepReveals = !!opts.keepReveals;
+  if(!keepReveals && typeof GS !== 'undefined' && GS && Array.isArray(GS.publicReveals) && GS.publicReveals.length){
     const remaining = [...GS.publicReveals];
     GS.deckMy = [...remaining, ...GS.deckMy];
     GS.publicReveals = [];
@@ -4385,6 +4423,88 @@ function resolveRevealCardMenu(action){
   resolveRevealCard(window.revealActionIndex, action);
   closeRevealActionMenu();
 }
+
+window.pendingRevealTargetAction = null;
+
+function beginRevealTargetAction(index, action){
+  const arr = getRevealCards();
+  if(index==null || index<0 || index>=arr.length) return;
+  window.pendingRevealTargetAction = { index, action };
+  closeRevealActionMenu();
+  closeRevealModal(null, { keepReveals:true });
+  const msgMap = {
+    fieldTop:'置き先のスロットを選択してください（上に置く）',
+    fieldBottom:'置き先のスロットを選択してください（下に置く）',
+    charge:'チャージ先のスロットを選択してください'
+  };
+  if(typeof toast==='function') toast(msgMap[action] || '置き先スロットを選択してください');
+}
+
+function resolveRevealCardMenu(action){
+  const idx = window.revealActionIndex;
+  if(idx==null) return;
+  if(['fieldTop','fieldBottom','charge'].includes(action)){
+    beginRevealTargetAction(idx, action);
+    return;
+  }
+  resolveRevealCard(idx, action);
+  closeRevealActionMenu();
+}
+
+function applyPendingRevealTarget(slotIndex){
+  const pending = window.pendingRevealTargetAction;
+  if(!pending || !GS) return false;
+  const arr = getRevealCards();
+  const card = arr[pending.index];
+  if(!card){
+    window.pendingRevealTargetAction = null;
+    return false;
+  }
+  const action = pending.action;
+  const slotObj = GS.fieldMy[slotIndex];
+
+  if(action==='charge'){
+    if(!slotObj || !slotObj.stack || !slotObj.stack.length){
+      if(typeof toast==='function') toast('チャージ先にはカードが必要です');
+      return true;
+    }
+  }
+
+  if(typeof simSnapshot==='function') simSnapshot();
+  arr.splice(pending.index, 1);
+
+  if(action==='fieldTop'){
+    if(!slotObj){
+      GS.fieldMy[slotIndex] = simBuildSlot(card, false);
+      if(typeof simLog==='function') simLog(`👁 ${card.detail?.name||card.number||'公開カード'} を スロット${slotIndex+1}に配置`,'info');
+    }else{
+      slotObj.stack.push(card);
+      if(typeof simLog==='function') simLog(`👁 ${card.detail?.name||card.number||'公開カード'} を スロット${slotIndex+1}の一番上に置いた`,'info');
+    }
+    if(typeof toast==='function') toast('公開カードをスロット上に置きました');
+  }else if(action==='fieldBottom'){
+    if(!slotObj){
+      GS.fieldMy[slotIndex] = simBuildSlot(card, false);
+      if(typeof simLog==='function') simLog(`👁 ${card.detail?.name||card.number||'公開カード'} を スロット${slotIndex+1}に配置`,'info');
+    }else{
+      slotObj.stack.unshift(card);
+      if(typeof simLog==='function') simLog(`👁 ${card.detail?.name||card.number||'公開カード'} を スロット${slotIndex+1}の一番下に置いた`,'info');
+    }
+    if(typeof toast==='function') toast('公開カードをスロット下に置きました');
+  }else if(action==='charge'){
+    if(!slotObj.chargeStack) slotObj.chargeStack = [];
+    slotObj.chargeStack.push(card);
+    if(typeof simLog==='function') simLog(`⚡ ${card.detail?.name||card.number||'公開カード'} を スロット${slotIndex+1}にチャージした`,'info');
+    if(typeof toast==='function') toast('公開カードをチャージしました');
+  }
+
+  window.pendingRevealTargetAction = null;
+  if(typeof simRenderAll==='function') simRenderAll();
+  renderRevealCards();
+  if(arr.length) openRevealModal();
+  return true;
+}
+
 function resolveRevealCard(index, action){
   const arr=getRevealCards();
   if(index==null || index<0 || index>=arr.length) return;
