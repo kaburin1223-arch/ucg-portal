@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-2.0 fixed layout final ===== */
+/* ===== vSolo-2.1 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-2.0 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-2.1 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-2.0 reveal modal tighter width + close returns cards */
+/* vSolo-2.1 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1655,7 +1655,7 @@ header{margin:0 !important;}
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.0</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-2.1</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -3087,6 +3087,7 @@ function simCtxMySlot(e, slot) {
   const slotObj = GS.fieldMy[slot];
   if (!slotObj) return;
   const top = slotObj.stack[slotObj.stack.length-1];
+  const bottom = slotObj.stack[0];
   const name = top.detail?.name||top.number;
   simShowCtx(e, [
     { section: `スロット${slot+1}：${name}` },
@@ -3097,9 +3098,18 @@ function simCtxMySlot(e, slot) {
     '---',
     { icon:'🔄', label:slotObj.faceDown?'表向きにする':'伏せる', action:()=>simToggleFaceDown('my',slot) },
     '---',
-    { icon:'✋', label:'手札に戻す（一番上のカード）', action:()=>simFieldToHand('my',slot) },
-    { icon:'⬆', label:'デッキ上に戻す（一番上のカード）', action:()=>simFieldToDeckTop('my',slot) },
-    { icon:'⬇', label:'デッキ下に戻す（一番上のカード）', action:()=>simFieldToDeckBottom('my',slot) },
+    { section: `一番上のカード：${top?.detail?.name||top?.number||'?'}` },
+    { icon:'✋', label:'手札に戻す（一番上）', action:()=>simFieldTopToHand('my',slot) },
+    { icon:'⬆', label:'デッキ上に戻す（一番上）', action:()=>simFieldTopToDeckTop('my',slot) },
+    { icon:'⬇', label:'デッキ下に戻す（一番上）', action:()=>simFieldTopToDeckBottom('my',slot) },
+    { icon:'🗑', label:'トラッシュへ（一番上）', action:()=>simFieldTopToGrave('my',slot), danger:true },
+    '---',
+    { section: `一番下のカード：${bottom?.detail?.name||bottom?.number||'?'}` },
+    { icon:'✋', label:'手札に戻す（一番下）', action:()=>simFieldBottomToHand('my',slot) },
+    { icon:'⬆', label:'デッキ上に戻す（一番下）', action:()=>simFieldBottomToDeckTop('my',slot) },
+    { icon:'⬇', label:'デッキ下に戻す（一番下）', action:()=>simFieldBottomToDeckBottom('my',slot) },
+    { icon:'🗑', label:'トラッシュへ（一番下）', action:()=>simFieldBottomToGrave('my',slot), danger:true },
+    '---',
     { icon:'🗑', label:'トラッシュへ（全スタック）', action:()=>simFieldToGrave('my',slot), danger:true },
     { icon:'✕',  label:'ゲームから取り除く（全スタック）', action:()=>simFieldRemove('my',slot), danger:true },
   ]);
@@ -3239,6 +3249,122 @@ function simToggleFaceDown(owner, slot) {
 }
 
 // ── フィールド→各領域 ──
+
+function simNormalizeFieldSlotAfterRemove(field, slot){
+  const slotObj = field[slot];
+  if (!slotObj || !slotObj.stack || !slotObj.stack.length){
+    field[slot] = null;
+    return;
+  }
+  slotObj.gradeUpCount = 0;
+  slotObj.gradeDownCount = 0;
+  slotObj.bpMod = 0;
+}
+
+function simFieldTopToHand(owner, slot) {
+  simSnapshot();
+  const field = owner==='my'?GS.fieldMy:GS.fieldCpu;
+  const hand  = owner==='my'?GS.handMy:GS.handCpu;
+  const slotObj = field[slot];
+  if (!slotObj||!slotObj.stack.length) return;
+  const card = slotObj.stack.pop();
+  hand.push(card);
+  simNormalizeFieldSlotAfterRemove(field, slot);
+  simLog(`✋ 「${card.detail?.name||'?'}」→ ${owner==='my'?'自分の':'CPUの'}手札（上）`,'info');
+  simRenderAll();
+}
+
+function simFieldTopToDeckTop(owner, slot) {
+  simSnapshot();
+  const field = owner==='my'?GS.fieldMy:GS.fieldCpu;
+  const deckRef = owner==='my'?GS.deckMy:GS.deckCpu;
+  const slotObj = field[slot];
+  if (!slotObj||!slotObj.stack.length) return;
+  const card = slotObj.stack.pop();
+  deckRef.unshift(card);
+  simNormalizeFieldSlotAfterRemove(field, slot);
+  simLog(`⬆ 「${card.detail?.name||'?'}」→ デッキ上（上）`,'info');
+  simRenderAll();
+}
+
+function simFieldTopToDeckBottom(owner, slot) {
+  simSnapshot();
+  const field = owner==='my'?GS.fieldMy:GS.fieldCpu;
+  const deckRef = owner==='my'?GS.deckMy:GS.deckCpu;
+  const slotObj = field[slot];
+  if (!slotObj||!slotObj.stack.length) return;
+  const card = slotObj.stack.pop();
+  deckRef.push(card);
+  simNormalizeFieldSlotAfterRemove(field, slot);
+  simLog(`⬇ 「${card.detail?.name||'?'}」→ デッキ下（上）`,'info');
+  simRenderAll();
+}
+
+function simFieldTopToGrave(owner, slot) {
+  simSnapshot();
+  const field = owner==='my'?GS.fieldMy:GS.fieldCpu;
+  const grave = owner==='my'?GS.graveMy:GS.graveCpu;
+  const slotObj = field[slot];
+  if (!slotObj||!slotObj.stack.length) return;
+  const card = slotObj.stack.pop();
+  grave.push(card);
+  simNormalizeFieldSlotAfterRemove(field, slot);
+  simLog(`🗑 「${card.detail?.name||'?'}」→ トラッシュ（上）`,'warn');
+  simRenderAll();
+}
+
+function simFieldBottomToHand(owner, slot) {
+  simSnapshot();
+  const field = owner==='my'?GS.fieldMy:GS.fieldCpu;
+  const hand  = owner==='my'?GS.handMy:GS.handCpu;
+  const slotObj = field[slot];
+  if (!slotObj||!slotObj.stack.length) return;
+  const card = slotObj.stack.shift();
+  hand.push(card);
+  simNormalizeFieldSlotAfterRemove(field, slot);
+  simLog(`✋ 「${card.detail?.name||'?'}」→ ${owner==='my'?'自分の':'CPUの'}手札（下）`,'info');
+  simRenderAll();
+}
+
+function simFieldBottomToDeckTop(owner, slot) {
+  simSnapshot();
+  const field = owner==='my'?GS.fieldMy:GS.fieldCpu;
+  const deckRef = owner==='my'?GS.deckMy:GS.deckCpu;
+  const slotObj = field[slot];
+  if (!slotObj||!slotObj.stack.length) return;
+  const card = slotObj.stack.shift();
+  deckRef.unshift(card);
+  simNormalizeFieldSlotAfterRemove(field, slot);
+  simLog(`⬆ 「${card.detail?.name||'?'}」→ デッキ上（下）`,'info');
+  simRenderAll();
+}
+
+function simFieldBottomToDeckBottom(owner, slot) {
+  simSnapshot();
+  const field = owner==='my'?GS.fieldMy:GS.fieldCpu;
+  const deckRef = owner==='my'?GS.deckMy:GS.deckCpu;
+  const slotObj = field[slot];
+  if (!slotObj||!slotObj.stack.length) return;
+  const card = slotObj.stack.shift();
+  deckRef.push(card);
+  simNormalizeFieldSlotAfterRemove(field, slot);
+  simLog(`⬇ 「${card.detail?.name||'?'}」→ デッキ下（下）`,'info');
+  simRenderAll();
+}
+
+function simFieldBottomToGrave(owner, slot) {
+  simSnapshot();
+  const field = owner==='my'?GS.fieldMy:GS.fieldCpu;
+  const grave = owner==='my'?GS.graveMy:GS.graveCpu;
+  const slotObj = field[slot];
+  if (!slotObj||!slotObj.stack.length) return;
+  const card = slotObj.stack.shift();
+  grave.push(card);
+  simNormalizeFieldSlotAfterRemove(field, slot);
+  simLog(`🗑 「${card.detail?.name||'?'}」→ トラッシュ（下）`,'warn');
+  simRenderAll();
+}
+
 function simFieldToHand(owner, slot) {
   simSnapshot();
   const field = owner==='my'?GS.fieldMy:GS.fieldCpu;
