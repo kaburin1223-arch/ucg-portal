@@ -1362,7 +1362,7 @@ body.sim-no-vertical {
 }
 
 
-/* ===== vSolo-3.2 fixed layout final ===== */
+/* ===== vSolo-3.2.1 fixed layout final ===== */
 html, body{
   height:100%;
   overflow:hidden !important;
@@ -1550,7 +1550,7 @@ header{margin:0 !important;}
 }
 
 
-/* ===== reveal modal compact + bulk actions vSolo-3.2 ===== */
+/* ===== reveal modal compact + bulk actions vSolo-3.2.1 ===== */
 .reveal-modal{max-width:1000px;max-height:80dvh !important;}
 .reveal-modal-hd{padding:8px 10px !important;align-items:flex-start !important;gap:8px !important;}
 .reveal-modal-title{font-size:12px !important;}
@@ -1611,7 +1611,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 reveal modal tighter width + close returns cards */
+/* vSolo-3.2.1 reveal modal tighter width + close returns cards */
 .reveal-grid{
   gap:6px !important;
 }
@@ -1651,7 +1651,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 ui rebalance + ctx open fix */
+/* vSolo-3.2.1 ui rebalance + ctx open fix */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:4px !important;
   padding-bottom:8px !important;
@@ -1712,7 +1712,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 tighter ops/log, more field */
+/* vSolo-3.2.1 tighter ops/log, more field */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:2px !important;
   padding-bottom:5px !important;
@@ -1779,7 +1779,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 visibility rebalance */
+/* vSolo-3.2.1 visibility rebalance */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:1px !important;
   padding-bottom:3px !important;
@@ -1869,7 +1869,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 bigger battle cards */
+/* vSolo-3.2.1 bigger battle cards */
 .sim-bottom-actions,.sim-action-area,.sim-ops,.action-bar{
   padding-top:0 !important;
   padding-bottom:2px !important;
@@ -1935,7 +1935,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 reveal stage1 + charge badge */
+/* vSolo-3.2.1 reveal stage1 + charge badge */
 .fslot-charge{
   position:absolute;
   left:4px;
@@ -1962,7 +1962,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 charge list modal */
+/* vSolo-3.2.1 charge list modal */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2034,14 +2034,14 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 grave slot placement buttons */
+/* vSolo-3.2.1 grave slot placement buttons */
 .pca.field{
   white-space:normal !important;
   line-height:1.1 !important;
 }
 
 
-/* vSolo-3.2 charge modal fallback */
+/* vSolo-3.2.1 charge modal fallback */
 .charge-modal{max-width:560px;max-height:78dvh !important;}
 .charge-list{
   display:flex;
@@ -2052,7 +2052,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 pending target bar */
+/* vSolo-3.2.1 pending target bar */
 .pending-target-bar{
   position:fixed;
   left:10px;
@@ -2091,7 +2091,7 @@ header{margin:0 !important;}
 }
 
 
-/* vSolo-3.2 guaranteed overlays */
+/* vSolo-3.2.1 guaranteed overlays */
 .pending-target-bar{
   position:fixed; left:10px; right:10px; bottom:90px; z-index:450;
   display:flex; align-items:center; justify-content:space-between; gap:8px;
@@ -2122,7 +2122,7 @@ header{margin:0 !important;}
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-3.2</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-3.2.1</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
@@ -4116,7 +4116,6 @@ function beginChargeTopTarget(slot, idx){
   const moved = arr.splice(idx,1)[0];
   window.pendingChargeTopTargetAction = { card:moved, sourceSlot:slot, sourceIndex:idx };
   window.pendingRevealTargetAction = null;
-  window.pendingChargeTopTargetAction = null;
   window.pendingPeekTargetAction = null;
   GS.selHand = null;
   closeChargeModal();
@@ -4475,7 +4474,18 @@ function simRenderMyField() {
     div.className=`fslot${isTgt?' targeted':''}`;
     div.onclick=(e)=>{
       if(window.pendingRevealTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
-        simFieldClick(i);
+        if(e && e.preventDefault) e.preventDefault();
+        if(e && e.stopPropagation) e.stopPropagation();
+        if(window.pendingRevealTargetAction){
+          if (i >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
+          if(applyPendingRevealTarget(i)) return;
+        }
+        if(window.pendingPeekTargetAction){
+          if(applyPendingPeekTarget(i)) return;
+        }
+        if(window.pendingChargeTopTargetAction){
+          if(applyPendingChargeTopTarget(i)) return;
+        }
         return;
       }
       const sel=GS.selHand!==null?GS.handMy[GS.selHand]:null;
@@ -4486,7 +4496,24 @@ function simRenderMyField() {
       }
       if(slotNow){ simCtxMySlot(e,i); } else { simFieldClick(i); }
     };
-    div.oncontextmenu=(e)=>{e.preventDefault();simCtxMySlot(e,i);};
+    div.oncontextmenu=(e)=>{
+      e.preventDefault();
+      if(window.pendingRevealTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
+        if(e && e.stopPropagation) e.stopPropagation();
+        if(window.pendingRevealTargetAction){
+          if (i >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
+          if(applyPendingRevealTarget(i)) return;
+        }
+        if(window.pendingPeekTargetAction){
+          if(applyPendingPeekTarget(i)) return;
+        }
+        if(window.pendingChargeTopTargetAction){
+          if(applyPendingChargeTopTarget(i)) return;
+        }
+        return;
+      }
+      simCtxMySlot(e,i);
+    };
     if(slotObj&&slotObj.stack.length>0){
       const top=slotObj.stack[slotObj.stack.length-1];
       if(slotObj.faceDown){
