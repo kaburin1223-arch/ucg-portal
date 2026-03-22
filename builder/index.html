@@ -1123,12 +1123,26 @@ body.light .ver-chip{
   color:#fff;border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.16);
 }
 
+
+/* solo mode final cleanup: remove any CPU strip remnants */
+.cpu-strip,.sim-cpu-strip,.cpu-title-strip,.sim-cpu-title,
+[class*="cpu-strip"],[class*="cpu-title"],[class*="cpu-headline"],
+[class*="opp-strip"],[class*="opp-title"],[class*="opp-headline"]{
+  display:none !important;
+  height:0 !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  overflow:hidden !important;
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.1</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.2</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
