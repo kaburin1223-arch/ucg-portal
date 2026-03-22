@@ -1361,12 +1361,200 @@ body.sim-no-vertical {
   overflow-y: hidden !important;
 }
 
+
+/* ===== vSolo-1.8 fixed layout final ===== */
+html, body{
+  height:100%;
+  overflow:hidden !important;
+}
+body.sim-no-vertical{
+  overflow:hidden !important;
+}
+.app, .app-shell{
+  height:100dvh !important;
+  overflow:hidden !important;
+}
+.simulator-root,
+.sim-main-wrap,
+#simArea,
+.sim-area,
+.simulator-area{
+  height:100dvh !important;
+  max-height:100dvh !important;
+  min-height:100dvh !important;
+  overflow:hidden !important;
+  display:grid !important;
+  grid-template-rows:
+    auto   /* mini nav */
+    auto   /* header */
+    auto   /* tabs */
+    auto   /* phase */
+    auto   /* ops */
+    84px   /* scene */
+    112px  /* field */
+    34px   /* log */
+    minmax(0,1fr); /* hand */
+  row-gap:6px;
+  box-sizing:border-box;
+}
+.simulator-root *, .sim-main-wrap *, #simArea *, .sim-area *, .simulator-area *{
+  min-height:0 !important;
+  box-sizing:border-box;
+}
+.portal-mini-nav{margin:0 !important;}
+header{margin:0 !important;}
+.nav-tabs,.tabs{margin:0 !important;}
+.phase-row,.sim-phasebar-wrap{margin:0 !important;}
+.action-bar,.sim-bottom-actions,.sim-action-area,.sim-ops{margin:0 !important;}
+
+.sz.scene-sz{
+  height:84px !important;
+  min-height:84px !important;
+  max-height:84px !important;
+  margin:0 !important;
+  padding:7px 8px !important;
+  overflow:hidden !important;
+}
+.sz.scene-sz .zone-head{
+  margin-bottom:4px !important;
+}
+.solo-scene-slot,.scene-slot{
+  min-height:44px !important;
+  max-height:44px !important;
+  height:44px !important;
+  padding:5px 8px !important;
+}
+
+.sz.field-sz{
+  height:112px !important;
+  min-height:112px !important;
+  max-height:112px !important;
+  margin:0 !important;
+  padding:7px 8px !important;
+  overflow:hidden !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+.sz.field-sz .zone-head{
+  margin-bottom:3px !important;
+}
+#myFieldBP{
+  flex:0 0 auto !important;
+  font-size:10px !important;
+  line-height:1 !important;
+  margin:0 !important;
+}
+.my-field-scroll{
+  flex:1 1 auto !important;
+  height:74px !important;
+  min-height:74px !important;
+  max-height:74px !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  padding-bottom:0 !important;
+}
+#myFieldRow{
+  height:74px !important;
+  align-items:flex-end !important;
+}
+.fslot{
+  width:56px !important;
+  height:74px !important;
+}
+.fslot-img,.fslot-ph{
+  height:48px !important;
+}
+.fslot-bar{
+  min-height:18px !important;
+}
+.fslot-stage,.fslot-bp,.fslot-mod,.fslot-cnt{
+  font-size:8px !important;
+  line-height:1 !important;
+}
+
+.sim-log, .log-wrap, #simLog, #simLogWrap, .sim-log-area, .sim-log-panel{
+  height:34px !important;
+  min-height:34px !important;
+  max-height:34px !important;
+  overflow:hidden !important;
+  font-size:10px !important;
+  line-height:1.1 !important;
+  margin:0 !important;
+  padding-top:4px !important;
+  padding-bottom:4px !important;
+}
+
+.hand-wrap, .hand-zone, .sz.hand-sz{
+  min-height:0 !important;
+  height:100% !important;
+  overflow-x:auto !important;
+  overflow-y:hidden !important;
+  margin:0 !important;
+}
+.hand-head, .zone-head.hand-head{
+  margin:0 0 4px 0 !important;
+}
+.hand-row, #handRow{
+  height:calc(100% - 18px) !important;
+  align-items:flex-start !important;
+}
+@media (max-width:540px){
+  .simulator-root,
+  .sim-main-wrap,
+  #simArea,
+  .sim-area,
+  .simulator-area{
+    grid-template-rows:
+      auto auto auto auto auto
+      80px
+      106px
+      32px
+      minmax(0,1fr);
+    row-gap:5px;
+  }
+  .sz.scene-sz{
+    height:80px !important;
+    min-height:80px !important;
+    max-height:80px !important;
+  }
+  .solo-scene-slot,.scene-slot{
+    height:42px !important;
+    min-height:42px !important;
+    max-height:42px !important;
+  }
+  .sz.field-sz{
+    height:106px !important;
+    min-height:106px !important;
+    max-height:106px !important;
+  }
+  .my-field-scroll{
+    height:70px !important;
+    min-height:70px !important;
+    max-height:70px !important;
+  }
+  #myFieldRow{
+    height:70px !important;
+  }
+  .fslot{
+    width:54px !important;
+    height:70px !important;
+  }
+  .fslot-img,.fslot-ph{
+    height:45px !important;
+  }
+  .sim-log, .log-wrap, #simLog, #simLogWrap, .sim-log-area, .sim-log-panel{
+    height:32px !important;
+    min-height:32px !important;
+    max-height:32px !important;
+  }
+}
+
 </style>
 </head>
 <body class="sim-no-vertical">
 
 <div class="hdr">
-  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.7</span>
+  <div class="logo logo-stack"><span class="logo-top">UCG</span><span class="logo-bottom">DECK&amp;SIM</span></div><span class="ver-chip">vSolo-1.8</span>
   
   <button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" title="ライト/ダーク切替">☀︎</button>
 
