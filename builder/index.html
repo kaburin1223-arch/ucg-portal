@@ -877,7 +877,8 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
 .reveal-modal-sub{font-size:11px;color:var(--tx2);}
 .reveal-modal-actions{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .reveal-grid{padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;overflow:auto;}
-.reveal-card{background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start;}
+.reveal-card{background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:border-color .15s,background .15s;}
+.reveal-card:hover{border-color:var(--bd3);background:var(--surf);}
 .reveal-thumb{width:56px;height:76px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--surf);display:flex;align-items:center;justify-content:center}
 .reveal-thumb img{width:100%;height:100%;object-fit:cover}
 .reveal-meta{min-width:0;flex:1}
@@ -1038,11 +1039,9 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
   <div class="sim-ops" id="simOpsBar" style="display:none">
     <div class="sim-ops-row">
       <button class="opbtn draw" onclick="simDrawN(1)" title="1枚ドロー">📥 ドロー</button>
-      <button class="opbtn draw" onclick="simDrawPrompt()" title="複数ドロー">📥 ×N</button>
-      <button class="opbtn draw" onclick="simRevealPrompt()" title="山札の上からN枚公開">×N操作</button>
+      <button class="opbtn draw" onclick="openNthActionModal()" title="複数ドローまたは公開">×N操作</button>
       <button class="opbtn" onclick="simPeekDeck()" title="デッキを確認・操作">📚 デッキ</button>
       <button class="opbtn" onclick="simPeekGrave()" title="トラッシュを確認・操作">🗑 トラッシュ</button>
-      <button class="opbtn" onclick="simClearReveal()" title="公開表示を閉じる">✕ 公開解除</button>
     </div>
     <div class="sim-ops-row">
       <button class="opbtn turn" onclick="simToggleFirstPlayer()" title="先手/後手を切り替え">⇄ 先後手</button>
@@ -1104,14 +1103,7 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
         <div class="sim-btns" id="simBtns"></div>
       </div>
 
-      <div class="sim-reveal hidden" id="simRevealArea">
-        <div class="sim-reveal-hdr">
-          <div class="sim-reveal-lbl">PUBLIC REVEAL</div>
-          <div class="sim-reveal-meta" id="simRevealMeta">0枚公開</div>
-        </div>
-        <div class="sim-reveal-scroll" id="simRevealScroll"></div>
-      </div>
-
+      
       <!-- Hand zone -->
       <div class="sim-hand">
         <div class="sim-hand-hdr">
@@ -1343,6 +1335,24 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
       </div>
     </div>
     <div class="reveal-grid" id="revealGrid"></div>
+  </div>
+</div>
+
+<div class="reveal-action-overlay" id="revealActionOverlay" onclick="closeRevealActionMenu(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:990;align-items:flex-end;justify-content:center;">
+  <div class="reveal-action-sheet" style="width:100%;max-width:720px;background:var(--bg2);border-top:2px solid var(--ac);border-radius:18px 18px 0 0;padding:14px 14px 18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+      <div>
+        <div style="font-family:'Orbitron',sans-serif;font-size:13px;font-weight:900;color:var(--tx);" id="revealActionTitle">公開カード処理</div>
+        <div style="font-size:11px;color:var(--tx2);" id="revealActionSub">処理を選択してください</div>
+      </div>
+      <button class="reveal-btn" type="button" onclick="closeRevealActionMenu()">閉じる</button>
+    </div>
+    <div class="reveal-row" style="gap:8px;" id="revealActionButtons">
+      <button class="reveal-btn" type="button" onclick="resolveRevealCardMenu('hand')">手札に加える</button>
+      <button class="reveal-btn" type="button" onclick="resolveRevealCardMenu('top')">デッキ上に戻す</button>
+      <button class="reveal-btn" type="button" onclick="resolveRevealCardMenu('bottom')">デッキ下に戻す</button>
+      <button class="reveal-btn danger" type="button" onclick="resolveRevealCardMenu('trash')">トラッシュする</button>
+    </div>
   </div>
 </div>
 
@@ -2175,15 +2185,10 @@ function simRevealN(n=1){
   return count;
 }
 function simRevealPrompt(){
-  if(!GS) return;
-  const n = parseInt(prompt('何枚公開しますか？','3'));
-  if(isNaN(n)||n<1) return;
-  simRevealN(n);
+  openNthActionModal();
 }
 function simClearReveal(){
-  if(!GS) return;
-  GS.publicReveals = [];
-  simRenderAll();
+  clearRevealCards();
 }
 
 // ══════════════════════════════════════════
@@ -2838,29 +2843,11 @@ function simRenderCpuField() {
 }
 
 function simRenderReveal() {
-  const area=document.getElementById('simRevealArea');
-  const meta=document.getElementById('simRevealMeta');
-  const scroll=document.getElementById('simRevealScroll');
-  if(!area||!meta||!scroll||!GS) return;
-  const cards=Array.isArray(GS.publicReveals)?GS.publicReveals:[];
-  if(!cards.length){
-    area.classList.add('hidden');
-    scroll.innerHTML='';
-    meta.textContent='0枚公開';
-    return;
+  const cards = Array.isArray(GS?.publicReveals) ? GS.publicReveals : [];
+  const sub = document.getElementById('revealModalSub');
+  if(sub && document.getElementById('revealModal')?.classList.contains('open')){
+    sub.textContent = cards.length ? `${cards.length}枚公開中` : '山札から公開したカード';
   }
-  area.classList.remove('hidden');
-  meta.textContent=`${cards.length}枚公開`;
-  scroll.innerHTML='';
-  cards.forEach(card=>{
-    const d=document.createElement('div');
-    d.className='reveal-card';
-    const thumb=card.detail?.thumbnail_image_url||'';
-    d.innerHTML=`${thumb?`<img class="reveal-card-img" src="${thumb}" loading="lazy">`:`<div class="reveal-card-ph">${simFe(card.feature?.value)}</div>`}
-      <div class="reveal-card-name">${card.detail?.name||card.number||'?'}</div>`;
-    d.onclick=()=>openDetail(card.id);
-    scroll.appendChild(d);
-  });
 }
 
 function simRenderScenes() {
@@ -2988,6 +2975,13 @@ function closeImageZoom(e){
 // ===== reveal / xN operation enhancements =====
 window.revealedCards = window.revealedCards || [];
 
+
+window.revealActionIndex = null;
+
+function getRevealCards(){
+  if(typeof GS !== 'undefined' && GS && Array.isArray(GS.publicReveals)) return GS.publicReveals;
+  return [];
+}
 function openRevealModal(){
   const ov=document.getElementById('revealModal');
   if(ov) ov.classList.add('open');
@@ -2999,9 +2993,12 @@ function closeRevealModal(e){
   if(ov) ov.classList.remove('open');
 }
 function clearRevealCards(){
-  saveState && saveState();
-  window.revealedCards = [];
+  if(typeof GS !== 'undefined' && GS){
+    GS.publicReveals = [];
+    if(typeof simRenderAll==='function') simRenderAll();
+  }
   renderRevealCards();
+  closeRevealActionMenu();
   closeRevealModal();
   if(typeof toast==='function') toast('公開カードを解除しました');
 }
@@ -3009,159 +3006,98 @@ function renderRevealCards(){
   const grid=document.getElementById('revealGrid');
   const sub=document.getElementById('revealModalSub');
   if(!grid) return;
-  const arr=window.revealedCards||[];
+  const arr=getRevealCards();
   if(sub) sub.textContent = arr.length ? `${arr.length}枚公開中` : '山札から公開したカード';
   if(!arr.length){
     grid.innerHTML='<div class="reveal-empty">公開カードはありません</div>';
     return;
   }
   grid.innerHTML = arr.map((c,idx)=>{
-    const img = c.image || c.img || c.image_url || '';
-    const name = escHtml(c.name || c.card_name || 'カード');
-    const info = escHtml([(c.type || c.card_type || ''),(c.level || c.lv || '')].filter(Boolean).join(' / '));
-    return `<div class="reveal-card">
-      <div class="reveal-thumb">${img?`<img src="${img}" alt="${name}">`:''}</div>
+    const img = c?.detail?.thumbnail_image_url || c?.detail?.image_url || c?.image || '';
+    const name = escHtml(c?.detail?.name || c?.name || c?.card_name || 'カード');
+    const info = escHtml([
+      c?.feature?.description || c?.type || c?.card_type || '',
+      c?.feature?.value==='scene' ? `R${c?.round ?? '?'}` : (c?.level ? `LV${c.level}` : '')
+    ].filter(Boolean).join(' / '));
+    return `<div class="reveal-card" onclick="openRevealActionMenu(${idx})">
+      <div class="reveal-thumb">${img?`<img src="${img}" alt="${name}">`:`<div style="font-size:20px">${simFe(c?.feature?.value)}</div>`}</div>
       <div class="reveal-meta">
         <div class="reveal-name">${name}</div>
         <div class="reveal-sub">${info||'公開カード'}</div>
-        <div class="reveal-row">
-          <button class="reveal-btn" type="button" onclick="resolveRevealCard(${idx},'hand')">手札に加える</button>
-          <button class="reveal-btn" type="button" onclick="resolveRevealCard(${idx},'top')">デッキ上</button>
-          <button class="reveal-btn" type="button" onclick="resolveRevealCard(${idx},'bottom')">デッキ下</button>
-          <button class="reveal-btn" type="button" onclick="beginRevealPlace(${idx},'fieldTop')">場の上に置く</button>
-          <button class="reveal-btn" type="button" onclick="beginRevealPlace(${idx},'fieldBottom')">場の下に置く</button>
-          <button class="reveal-btn danger" type="button" onclick="resolveRevealCard(${idx},'trash')">トラッシュ</button>
-        </div>
       </div>
     </div>`;
   }).join('');
 }
-function resolveRevealCard(index, action){
-  const arr=window.revealedCards||[];
+function openRevealActionMenu(index){
+  const arr=getRevealCards();
   if(index<0 || index>=arr.length) return;
+  window.revealActionIndex = index;
+  const card = arr[index];
+  const ov=document.getElementById('revealActionOverlay');
+  const title=document.getElementById('revealActionTitle');
+  const sub=document.getElementById('revealActionSub');
+  if(title) title.textContent = card?.detail?.name || card?.name || '公開カード処理';
+  if(sub) sub.textContent = 'このカードに対する処理を選択してください';
+  if(ov) ov.style.display='flex';
+}
+function closeRevealActionMenu(e){
+  if(e && e.target && e.target.id!=='revealActionOverlay') return;
+  const ov=document.getElementById('revealActionOverlay');
+  if(ov) ov.style.display='none';
+  window.revealActionIndex = null;
+}
+function resolveRevealCardMenu(action){
+  resolveRevealCard(window.revealActionIndex, action);
+  closeRevealActionMenu();
+}
+function resolveRevealCard(index, action){
+  const arr=getRevealCards();
+  if(index==null || index<0 || index>=arr.length) return;
   const card = arr.splice(index,1)[0];
   if(!card) return;
-  const deck = state.player.deck;
-  const hand = state.player.hand;
-  const trash = state.player.trash;
   if(action==='hand'){
-    hand.push(card);
+    GS.handMy.push(card);
     if(typeof toast==='function') toast('公開カードを手札に加えました');
   }else if(action==='top'){
-    deck.unshift(card);
+    GS.deckMy.unshift(card);
     if(typeof toast==='function') toast('公開カードをデッキ上に戻しました');
   }else if(action==='bottom'){
-    deck.push(card);
+    GS.deckMy.push(card);
     if(typeof toast==='function') toast('公開カードをデッキ下に戻しました');
   }else if(action==='trash'){
-    trash.push(card);
+    GS.graveMy.push(card);
     if(typeof toast==='function') toast('公開カードをトラッシュしました');
   }
+  if(typeof simLog==='function'){
+    const nm = card?.detail?.name || card?.name || '公開カード';
+    const map = {hand:'手札に加えた', top:'デッキ上に戻した', bottom:'デッキ下に戻した', trash:'トラッシュした'};
+    simLog(`👁 ${nm} を ${map[action]||'処理'} `,'info');
+  }
   renderRevealCards();
+  if(typeof simRenderAll==='function') simRenderAll();
   if(!arr.length) closeRevealModal();
-  renderAll && renderAll();
 }
 function escHtml(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function openNthActionModal(){
+  if(typeof GS==='undefined' || !GS) return;
   const raw = prompt('枚数を入力してください');
   if(raw===null) return;
   const cnt = Math.max(1, parseInt(raw,10)||0);
   if(!cnt) return;
   const drawMode = confirm('OKでドロー / キャンセルで公開');
   if(drawMode){
-    drawMultiple(cnt);
+    simDrawCore(cnt, true);
   }else{
-    revealMultiple(cnt);
+    simSnapshot && simSnapshot();
+    const done = simRevealN(cnt);
+    if(done>0) openRevealModal();
   }
 }
-function drawMultiple(cnt){
-  saveState && saveState();
-  let done=0;
-  for(let i=0;i<cnt;i++){
-    if(!state.player.deck.length) break;
-    state.player.hand.push(state.player.deck.shift());
-    done++;
-  }
-  renderAll && renderAll();
-  if(typeof toast==='function') toast(done + '枚ドローしました');
-}
-function revealMultiple(cnt){
-  saveState && saveState();
-  let done=0;
-  window.revealedCards = window.revealedCards || [];
-  for(let i=0;i<cnt;i++){
-    if(!state.player.deck.length) break;
-    window.revealedCards.push(state.player.deck.shift());
-    done++;
-  }
-  renderAll && renderAll();
-  renderRevealCards();
-  openRevealModal();
-  if(typeof toast==='function') toast(done + '枚公開しました');
-}
-
 
 window.renderRevealArea = renderRevealCards;
 window.toggleRevealArea = openRevealModal;
-
-
-window.pendingRevealPlacement = null;
-
-function beginRevealPlace(index, mode){
-  const arr = window.revealedCards || [];
-  if(index < 0 || index >= arr.length) return;
-  window.pendingRevealPlacement = { index, mode };
-  if(typeof toast==='function'){
-    toast(mode==='fieldTop' ? '自分の場の対象スロットを選んで上に置きます' : '自分の場の対象スロットを選んで下に置きます');
-  }
-  closeRevealModal();
-}
-
-function applyPendingRevealPlacement(slotIndex){
-  const pending = window.pendingRevealPlacement;
-  if(!pending) return false;
-  const slot = state?.player?.field?.[slotIndex];
-  if(!slot || !Array.isArray(slot.cards) || !slot.cards.length){
-    if(typeof toast==='function') toast('カードがある自分の場スロットを選択してください');
-    return true;
-  }
-  const arr = window.revealedCards || [];
-  const card = arr[pending.index];
-  if(!card){
-    window.pendingRevealPlacement = null;
-    return true;
-  }
-  saveState && saveState();
-  arr.splice(pending.index, 1);
-  if(pending.mode === 'fieldTop'){
-    slot.cards.push(card);
-    if(typeof toast==='function') toast('公開カードを場の上に置きました');
-    pushLogSafe('公開カードを自分の場の上に置いた');
-  }else{
-    slot.cards.unshift(card);
-    if(typeof toast==='function') toast('公開カードを場の下に置きました');
-    pushLogSafe('公開カードを自分の場の下に置いた');
-  }
-  window.pendingRevealPlacement = null;
-  renderRevealCards();
-  renderAll && renderAll();
-  return true;
-}
-
-function cancelPendingRevealPlacement(silent=false){
-  if(!window.pendingRevealPlacement) return;
-  window.pendingRevealPlacement = null;
-  if(!silent && typeof toast==='function') toast('場に置く操作をキャンセルしました');
-}
-
-function pushLogSafe(msg){
-  try{
-    if(typeof addLog==='function') addLog(msg);
-    else if(Array.isArray(state?.logs)) state.logs.unshift(msg);
-  }catch(e){}
-}
 
 // ═══════════════════════════════════════════
 // INIT
