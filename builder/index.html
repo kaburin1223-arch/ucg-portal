@@ -867,6 +867,29 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
   .sim-reveal-scroll{gap:5px;padding:3px 8px 7px;}
   .reveal-card{width:58px;}
 }
+
+/* reveal modal */
+.reveal-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);z-index:980;display:none;align-items:flex-end;justify-content:center;}
+.reveal-modal-overlay.open{display:flex;}
+.reveal-modal{width:100%;max-width:980px;max-height:86vh;background:var(--bg2);border:1px solid var(--bd);border-top:2px solid var(--ac);border-radius:18px 18px 0 0;overflow:hidden;display:flex;flex-direction:column;}
+.reveal-modal-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--bd);background:var(--bg3);}
+.reveal-modal-title{font-family:'Orbitron',sans-serif;font-size:14px;font-weight:900;color:var(--tx);}
+.reveal-modal-sub{font-size:11px;color:var(--tx2);}
+.reveal-modal-actions{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.reveal-grid{padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;overflow:auto;}
+.reveal-card{background:var(--bg3);border:1px solid var(--bd);border-radius:12px;padding:10px;display:flex;gap:10px;align-items:flex-start;}
+.reveal-thumb{width:56px;height:76px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--surf);display:flex;align-items:center;justify-content:center}
+.reveal-thumb img{width:100%;height:100%;object-fit:cover}
+.reveal-meta{min-width:0;flex:1}
+.reveal-name{font-size:13px;font-weight:800;line-height:1.35;color:var(--tx);margin-bottom:4px}
+.reveal-sub{font-size:11px;color:var(--tx2);margin-bottom:8px}
+.reveal-row{display:flex;gap:6px;flex-wrap:wrap}
+.reveal-btn{padding:7px 10px;border-radius:8px;border:1px solid var(--bd2);background:var(--bg);color:var(--tx);font-size:11px;font-weight:700;cursor:pointer}
+.reveal-btn:hover{border-color:var(--bd3)}
+.reveal-btn.danger{color:#ff9999}
+.reveal-empty{padding:24px 14px;color:var(--tx2);text-align:center}
+@media (max-width: 700px){.reveal-grid{grid-template-columns:1fr;}}
+
 </style>
 </head>
 <body>
@@ -1016,7 +1039,7 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
     <div class="sim-ops-row">
       <button class="opbtn draw" onclick="simDrawN(1)" title="1枚ドロー">📥 ドロー</button>
       <button class="opbtn draw" onclick="simDrawPrompt()" title="複数ドロー">📥 ×N</button>
-      <button class="opbtn draw" onclick="simRevealPrompt()" title="山札の上からN枚公開">👁 ×N公開</button>
+      <button class="opbtn draw" onclick="simRevealPrompt()" title="山札の上からN枚公開">×N操作</button>
       <button class="opbtn" onclick="simPeekDeck()" title="デッキを確認・操作">📚 デッキ</button>
       <button class="opbtn" onclick="simPeekGrave()" title="トラッシュを確認・操作">🗑 トラッシュ</button>
       <button class="opbtn" onclick="simClearReveal()" title="公開表示を閉じる">✕ 公開解除</button>
@@ -1303,6 +1326,23 @@ body.light .toasts .toast.err{background:#fff;border-color:#444;color:#444;}
   <div class="imgzoom-box">
     <button class="imgzoom-close" onclick="closeImageZoom()">✕</button>
     <img class="imgzoom-img" id="imgZoomImg" alt="">
+  </div>
+</div>
+
+
+<div class="reveal-modal-overlay" id="revealModal" onclick="closeRevealModal(event)">
+  <div class="reveal-modal">
+    <div class="reveal-modal-hd">
+      <div>
+        <div class="reveal-modal-title">公開カード</div>
+        <div class="reveal-modal-sub" id="revealModalSub">山札から公開したカード</div>
+      </div>
+      <div class="reveal-modal-actions">
+        <button class="reveal-btn" type="button" onclick="clearRevealCards()">公開解除</button>
+        <button class="reveal-btn" type="button" onclick="closeRevealModal()">閉じる</button>
+      </div>
+    </div>
+    <div class="reveal-grid" id="revealGrid"></div>
   </div>
 </div>
 
@@ -2942,6 +2982,185 @@ function closeImageZoom(e){
   const img=document.getElementById('imgZoomImg');
   if(ov) ov.classList.add('hidden');
   if(img){ img.removeAttribute('src'); img.alt=''; }
+}
+
+
+// ===== reveal / xN operation enhancements =====
+window.revealedCards = window.revealedCards || [];
+
+function openRevealModal(){
+  const ov=document.getElementById('revealModal');
+  if(ov) ov.classList.add('open');
+  renderRevealCards();
+}
+function closeRevealModal(e){
+  if(e && e.target && e.target.id!=='revealModal') return;
+  const ov=document.getElementById('revealModal');
+  if(ov) ov.classList.remove('open');
+}
+function clearRevealCards(){
+  saveState && saveState();
+  window.revealedCards = [];
+  renderRevealCards();
+  closeRevealModal();
+  if(typeof toast==='function') toast('公開カードを解除しました');
+}
+function renderRevealCards(){
+  const grid=document.getElementById('revealGrid');
+  const sub=document.getElementById('revealModalSub');
+  if(!grid) return;
+  const arr=window.revealedCards||[];
+  if(sub) sub.textContent = arr.length ? `${arr.length}枚公開中` : '山札から公開したカード';
+  if(!arr.length){
+    grid.innerHTML='<div class="reveal-empty">公開カードはありません</div>';
+    return;
+  }
+  grid.innerHTML = arr.map((c,idx)=>{
+    const img = c.image || c.img || c.image_url || '';
+    const name = escHtml(c.name || c.card_name || 'カード');
+    const info = escHtml([(c.type || c.card_type || ''),(c.level || c.lv || '')].filter(Boolean).join(' / '));
+    return `<div class="reveal-card">
+      <div class="reveal-thumb">${img?`<img src="${img}" alt="${name}">`:''}</div>
+      <div class="reveal-meta">
+        <div class="reveal-name">${name}</div>
+        <div class="reveal-sub">${info||'公開カード'}</div>
+        <div class="reveal-row">
+          <button class="reveal-btn" type="button" onclick="resolveRevealCard(${idx},'hand')">手札に加える</button>
+          <button class="reveal-btn" type="button" onclick="resolveRevealCard(${idx},'top')">デッキ上</button>
+          <button class="reveal-btn" type="button" onclick="resolveRevealCard(${idx},'bottom')">デッキ下</button>
+          <button class="reveal-btn" type="button" onclick="beginRevealPlace(${idx},'fieldTop')">場の上に置く</button>
+          <button class="reveal-btn" type="button" onclick="beginRevealPlace(${idx},'fieldBottom')">場の下に置く</button>
+          <button class="reveal-btn danger" type="button" onclick="resolveRevealCard(${idx},'trash')">トラッシュ</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function resolveRevealCard(index, action){
+  const arr=window.revealedCards||[];
+  if(index<0 || index>=arr.length) return;
+  const card = arr.splice(index,1)[0];
+  if(!card) return;
+  const deck = state.player.deck;
+  const hand = state.player.hand;
+  const trash = state.player.trash;
+  if(action==='hand'){
+    hand.push(card);
+    if(typeof toast==='function') toast('公開カードを手札に加えました');
+  }else if(action==='top'){
+    deck.unshift(card);
+    if(typeof toast==='function') toast('公開カードをデッキ上に戻しました');
+  }else if(action==='bottom'){
+    deck.push(card);
+    if(typeof toast==='function') toast('公開カードをデッキ下に戻しました');
+  }else if(action==='trash'){
+    trash.push(card);
+    if(typeof toast==='function') toast('公開カードをトラッシュしました');
+  }
+  renderRevealCards();
+  if(!arr.length) closeRevealModal();
+  renderAll && renderAll();
+}
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function openNthActionModal(){
+  const raw = prompt('枚数を入力してください');
+  if(raw===null) return;
+  const cnt = Math.max(1, parseInt(raw,10)||0);
+  if(!cnt) return;
+  const drawMode = confirm('OKでドロー / キャンセルで公開');
+  if(drawMode){
+    drawMultiple(cnt);
+  }else{
+    revealMultiple(cnt);
+  }
+}
+function drawMultiple(cnt){
+  saveState && saveState();
+  let done=0;
+  for(let i=0;i<cnt;i++){
+    if(!state.player.deck.length) break;
+    state.player.hand.push(state.player.deck.shift());
+    done++;
+  }
+  renderAll && renderAll();
+  if(typeof toast==='function') toast(done + '枚ドローしました');
+}
+function revealMultiple(cnt){
+  saveState && saveState();
+  let done=0;
+  window.revealedCards = window.revealedCards || [];
+  for(let i=0;i<cnt;i++){
+    if(!state.player.deck.length) break;
+    window.revealedCards.push(state.player.deck.shift());
+    done++;
+  }
+  renderAll && renderAll();
+  renderRevealCards();
+  openRevealModal();
+  if(typeof toast==='function') toast(done + '枚公開しました');
+}
+
+
+window.renderRevealArea = renderRevealCards;
+window.toggleRevealArea = openRevealModal;
+
+
+window.pendingRevealPlacement = null;
+
+function beginRevealPlace(index, mode){
+  const arr = window.revealedCards || [];
+  if(index < 0 || index >= arr.length) return;
+  window.pendingRevealPlacement = { index, mode };
+  if(typeof toast==='function'){
+    toast(mode==='fieldTop' ? '自分の場の対象スロットを選んで上に置きます' : '自分の場の対象スロットを選んで下に置きます');
+  }
+  closeRevealModal();
+}
+
+function applyPendingRevealPlacement(slotIndex){
+  const pending = window.pendingRevealPlacement;
+  if(!pending) return false;
+  const slot = state?.player?.field?.[slotIndex];
+  if(!slot || !Array.isArray(slot.cards) || !slot.cards.length){
+    if(typeof toast==='function') toast('カードがある自分の場スロットを選択してください');
+    return true;
+  }
+  const arr = window.revealedCards || [];
+  const card = arr[pending.index];
+  if(!card){
+    window.pendingRevealPlacement = null;
+    return true;
+  }
+  saveState && saveState();
+  arr.splice(pending.index, 1);
+  if(pending.mode === 'fieldTop'){
+    slot.cards.push(card);
+    if(typeof toast==='function') toast('公開カードを場の上に置きました');
+    pushLogSafe('公開カードを自分の場の上に置いた');
+  }else{
+    slot.cards.unshift(card);
+    if(typeof toast==='function') toast('公開カードを場の下に置きました');
+    pushLogSafe('公開カードを自分の場の下に置いた');
+  }
+  window.pendingRevealPlacement = null;
+  renderRevealCards();
+  renderAll && renderAll();
+  return true;
+}
+
+function cancelPendingRevealPlacement(silent=false){
+  if(!window.pendingRevealPlacement) return;
+  window.pendingRevealPlacement = null;
+  if(!silent && typeof toast==='function') toast('場に置く操作をキャンセルしました');
+}
+
+function pushLogSafe(msg){
+  try{
+    if(typeof addLog==='function') addLog(msg);
+    else if(Array.isArray(state?.logs)) state.logs.unshift(msg);
+  }catch(e){}
 }
 
 // ═══════════════════════════════════════════
