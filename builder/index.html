@@ -3453,9 +3453,6 @@ function simFieldClick(slot) {
     if (slot >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
     if (applyPendingRevealTarget(slot)) return;
   }
-  if (window.pendingGraveTargetAction) {
-    if (applyPendingGraveTarget(slot)) return;
-  }
   if (window.pendingPeekTargetAction) {
     if (applyPendingPeekTarget(slot)) return;
   }
@@ -4158,76 +4155,7 @@ function applyPendingChargeTopTarget(slot){
 }
 
 
-window.pendingGraveTargetAction = null;
-
-function simGraveBeginToFieldTop(idx){
-  const arr = GS.graveMy || [];
-  const card = arr[idx];
-  if(!card) return;
-  window.pendingGraveTargetAction = { mode:'top', cardId: card.id || '', sourceIndex: idx };
-  window.pendingRevealTargetAction = null;
-  window.pendingPeekTargetAction = null;
-  window.pendingChargeTopTargetAction = null;
-  GS.selHand = null;
-  simClosePeek();
-  if(typeof simCloseCtx==='function') simCloseCtx();
-  if(typeof simRenderAll==='function') simRenderAll();
-  updatePendingTargetBar();
-  if(typeof toast==='function') toast('置き先スロットを選択してください（トラッシュ→上に置く）');
-}
-
-function simGraveBeginToFieldBottom(idx){
-  const arr = GS.graveMy || [];
-  const card = arr[idx];
-  if(!card) return;
-  window.pendingGraveTargetAction = { mode:'bottom', cardId: card.id || '', sourceIndex: idx };
-  window.pendingRevealTargetAction = null;
-  window.pendingPeekTargetAction = null;
-  window.pendingChargeTopTargetAction = null;
-  GS.selHand = null;
-  simClosePeek();
-  if(typeof simCloseCtx==='function') simCloseCtx();
-  if(typeof simRenderAll==='function') simRenderAll();
-  updatePendingTargetBar();
-  if(typeof toast==='function') toast('置き先スロットを選択してください（トラッシュ→下に置く）');
-}
-
-function applyPendingGraveTarget(slot){
-  const pending = window.pendingGraveTargetAction;
-  if(!pending || !GS) return false;
-  if(slot >= GS.activeBattleSlots){
-    if(typeof toast==='function') toast('未開放のバトルエリアです');
-    return true;
-  }
-  const grave = GS.graveMy || [];
-  let idx = grave.findIndex(c => (c?.id || '') === (pending.cardId || ''));
-  if(idx < 0 && Number.isInteger(pending.sourceIndex) && pending.sourceIndex < grave.length) idx = pending.sourceIndex;
-  const moved = idx >= 0 ? grave.splice(idx,1)[0] : null;
-  if(!moved){
-    window.pendingGraveTargetAction = null;
-    updatePendingTargetBar();
-    if(typeof toast==='function') toast('トラッシュ内の対象カードが見つかりませんでした');
-    return true;
-  }
-  simSnapshot();
-  const slotObj = GS.fieldMy[slot];
-  if(!slotObj){
-    GS.fieldMy[slot] = simBuildSlot(moved,false);
-    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」トラッシュ→スロット${slot+1}へ配置`,'info');
-  }else if(pending.mode==='top'){
-    slotObj.stack.push(moved);
-    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」トラッシュ→スロット${slot+1}の一番上へ`,'info');
-  }else{
-    slotObj.stack.unshift(moved);
-    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」トラッシュ→スロット${slot+1}の一番下へ`,'info');
-  }
-  window.pendingGraveTargetAction = null;
-  GS.selHand = null;
-  if(typeof simRenderAll==='function') simRenderAll();
-  updatePendingTargetBar();
-  if(typeof toast==='function') toast('トラッシュから配置しました');
-  return true;
-}
+/* grave->slot は pendingPeekTargetAction で統一管理 */
 
 function updatePendingTargetBar(){
   const bar = document.getElementById('pendingTargetBar');
@@ -4239,14 +4167,12 @@ function updatePendingTargetBar(){
     if(a==='fieldTop') msg = '公開カードの置き先を選択してください（スロット上）';
     else if(a==='fieldBottom') msg = '公開カードの置き先を選択してください（スロット下）';
     else if(a==='charge') msg = '公開カードのチャージ先を選択してください';
-  }else if(window.pendingGraveTargetAction){
-    msg = window.pendingGraveTargetAction.mode==='top'
-      ? 'トラッシュの置き先を選択してください（スロット上）'
-      : 'トラッシュの置き先を選択してください（スロット下）';
   }else if(window.pendingPeekTargetAction){
-    const m = window.pendingPeekTargetAction.mode;
-    msg = m==='top' ? 'デッキの置き先を選択してください（スロット上）'
-                    : 'デッキの置き先を選択してください（スロット下）';
+    const p = window.pendingPeekTargetAction;
+    const src = p.type==='grave' ? 'トラッシュ' : 'デッキ';
+    msg = p.mode==='top'
+      ? `${src}の置き先を選択してください（スロット上）`
+      : `${src}の置き先を選択してください（スロット下）`;
   }else if(window.pendingChargeTopTargetAction){
     msg = 'チャージカードの重ね先を選択してください（スロット上）';
   }
@@ -4259,9 +4185,7 @@ function updatePendingTargetBar(){
 }
 
 function clearPendingTargetActions(){
-  if(window.pendingGraveTargetAction){
-    window.pendingGraveTargetAction = null;
-  }
+  // pendingPeekTargetAction: カードを元の配列に戻す
   if(window.pendingPeekTargetAction && window.pendingPeekTargetAction.card){
     const p = window.pendingPeekTargetAction;
     const arr = p.type==='deck' ? GS.deckMy : GS.graveMy;
@@ -4290,10 +4214,13 @@ function clearPendingTargetActions(){
 
 
 function simGraveBeginToFieldTop(idx){
+  if(!GS) return;
   const arr = GS.graveMy || [];
-  const moved = arr[idx];
-  if(!moved) return;
-  window.pendingPeekTargetAction = { type:'grave', mode:'top', card:moved, sourceIndex:idx, removeOnApply:true };
+  const card = arr[idx];
+  if(!card) return;
+  // トラッシュから一時的に取り出してpendingに保持
+  const moved = arr.splice(idx, 1)[0];
+  window.pendingPeekTargetAction = { type:'grave', mode:'top', card:moved, sourceIndex:idx };
   window.pendingRevealTargetAction = null;
   window.pendingChargeTopTargetAction = null;
   GS.selHand = null;
@@ -4305,10 +4232,13 @@ function simGraveBeginToFieldTop(idx){
 }
 
 function simGraveBeginToFieldBottom(idx){
+  if(!GS) return;
   const arr = GS.graveMy || [];
-  const moved = arr[idx];
-  if(!moved) return;
-  window.pendingPeekTargetAction = { type:'grave', mode:'bottom', card:moved, sourceIndex:idx, removeOnApply:true };
+  const card = arr[idx];
+  if(!card) return;
+  // トラッシュから一時的に取り出してpendingに保持
+  const moved = arr.splice(idx, 1)[0];
+  window.pendingPeekTargetAction = { type:'grave', mode:'bottom', card:moved, sourceIndex:idx };
   window.pendingRevealTargetAction = null;
   window.pendingChargeTopTargetAction = null;
   GS.selHand = null;
@@ -4367,20 +4297,26 @@ function simApplyPendingPeekTarget(slot){
   const slotObj = GS.fieldMy[slot];
   if(!slotObj){
     GS.fieldMy[slot] = simBuildSlot(moved,false);
-    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」→ スロット${slot+1}へ配置`,'info');
+    const src = pending.type==='grave'?'トラッシュ':'デッキ';
+    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」${src}→ スロット${slot+1}へ配置`,'info');
   }else if(pending.mode==='top'){
     slotObj.stack.push(moved);
-    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」→ スロット${slot+1}の一番上へ`,'info');
+    const src = pending.type==='grave'?'トラッシュ':'デッキ';
+    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」${src}→ スロット${slot+1}の一番上へ`,'info');
   }else{
     slotObj.stack.unshift(moved);
-    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」→ スロット${slot+1}の一番下へ`,'info');
+    const src = pending.type==='grave'?'トラッシュ':'デッキ';
+    if(typeof simLog==='function') simLog(`▶ 「${moved.detail?.name||'?'}」${src}→ スロット${slot+1}の一番下へ`,'info');
   }
   window.pendingPeekTargetAction = null;
   GS.selHand = null;
   simRenderAll();
   updatePendingTargetBar();
+  if(typeof toast==='function') toast('配置しました');
   return true;
 }
+// simApplyPendingPeekTarget の別名（simFieldClick内の呼び出しに対応）
+function applyPendingPeekTarget(slot){ return simApplyPendingPeekTarget(slot); }
 
 function simPeekToField(type, idx) {
   simSnapshot();
@@ -4585,15 +4521,12 @@ function simRenderMyField() {
     }
     div.className=`fslot${isTgt?' targeted':''}`;
     div.onclick=(e)=>{
-      if(window.pendingRevealTargetAction || window.pendingGraveTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
+      if(window.pendingRevealTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
         if(e && e.preventDefault) e.preventDefault();
         if(e && e.stopPropagation) e.stopPropagation();
         if(window.pendingRevealTargetAction){
           if (i >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
           if(applyPendingRevealTarget(i)) return;
-        }
-        if(window.pendingGraveTargetAction){
-          if(applyPendingGraveTarget(i)) return;
         }
         if(window.pendingPeekTargetAction){
           if(applyPendingPeekTarget(i)) return;
@@ -4613,14 +4546,11 @@ function simRenderMyField() {
     };
     div.oncontextmenu=(e)=>{
       e.preventDefault();
-      if(window.pendingRevealTargetAction || window.pendingGraveTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
+      if(window.pendingRevealTargetAction || window.pendingPeekTargetAction || window.pendingChargeTopTargetAction){
         if(e && e.stopPropagation) e.stopPropagation();
         if(window.pendingRevealTargetAction){
           if (i >= GS.activeBattleSlots) { if(typeof toast!='undefined') toast('未開放のバトルエリアです','err'); return; }
           if(applyPendingRevealTarget(i)) return;
-        }
-        if(window.pendingGraveTargetAction){
-          if(applyPendingGraveTarget(i)) return;
         }
         if(window.pendingPeekTargetAction){
           if(applyPendingPeekTarget(i)) return;
@@ -5358,123 +5288,8 @@ function toggleTheme(){
 </div>
 
 
-<script>
-/* vSolo-3.2.4 grave->slot hotfix */
-window.pendingGraveTargetAction = window.pendingGraveTargetAction || null;
 
-function simGraveBeginToFieldTop(idx){
-  const arr = (window.GS && GS.graveMy) ? GS.graveMy : [];
-  const card = arr[idx];
-  if(!card) return;
-  window.pendingGraveTargetAction = {
-    mode:'top',
-    cardId: card.id || '',
-    sourceIndex: idx
-  };
-  window.pendingRevealTargetAction = null;
-  window.pendingPeekTargetAction = null;
-  window.pendingChargeTopTargetAction = null;
-  if(window.GS) GS.selHand = null;
-  if(typeof simClosePeek === 'function') simClosePeek();
-  if(typeof simCloseCtx === 'function') simCloseCtx();
-  if(typeof simRenderAll === 'function') simRenderAll();
-  if(typeof updatePendingTargetBar === 'function') updatePendingTargetBar();
-  if(typeof toast === 'function') toast('置き先スロットを選択してください（トラッシュ→上に置く）');
-}
 
-function simGraveBeginToFieldBottom(idx){
-  const arr = (window.GS && GS.graveMy) ? GS.graveMy : [];
-  const card = arr[idx];
-  if(!card) return;
-  window.pendingGraveTargetAction = {
-    mode:'bottom',
-    cardId: card.id || '',
-    sourceIndex: idx
-  };
-  window.pendingRevealTargetAction = null;
-  window.pendingPeekTargetAction = null;
-  window.pendingChargeTopTargetAction = null;
-  if(window.GS) GS.selHand = null;
-  if(typeof simClosePeek === 'function') simClosePeek();
-  if(typeof simCloseCtx === 'function') simCloseCtx();
-  if(typeof simRenderAll === 'function') simRenderAll();
-  if(typeof updatePendingTargetBar === 'function') updatePendingTargetBar();
-  if(typeof toast === 'function') toast('置き先スロットを選択してください（トラッシュ→下に置く）');
-}
-
-function applyPendingGraveTarget(slot){
-  const pending = window.pendingGraveTargetAction;
-  if(!pending || !window.GS) return false;
-  if(slot >= GS.activeBattleSlots){
-    if(typeof toast === 'function') toast('未開放のバトルエリアです');
-    return true;
-  }
-
-  const grave = GS.graveMy || [];
-  let idx = grave.findIndex(c => (c && (c.id || '')) === (pending.cardId || ''));
-  if(idx < 0 && Number.isInteger(pending.sourceIndex) && pending.sourceIndex >= 0 && pending.sourceIndex < grave.length){
-    idx = pending.sourceIndex;
-  }
-  if(idx < 0){
-    window.pendingGraveTargetAction = null;
-    if(typeof updatePendingTargetBar === 'function') updatePendingTargetBar();
-    if(typeof toast === 'function') toast('トラッシュ内の対象カードが見つかりませんでした');
-    return true;
-  }
-
-  if(typeof simSnapshot === 'function') simSnapshot();
-  const moved = grave.splice(idx, 1)[0];
-  const slotObj = GS.fieldMy[slot];
-
-  if(!slotObj){
-    GS.fieldMy[slot] = simBuildSlot(moved, false);
-    if(typeof simLog === 'function') simLog(`▶ 「${moved.detail?.name||'?'}」トラッシュ→スロット${slot+1}へ配置`, 'info');
-  }else if(pending.mode === 'top'){
-    slotObj.stack.push(moved);
-    if(typeof simLog === 'function') simLog(`▶ 「${moved.detail?.name||'?'}」トラッシュ→スロット${slot+1}の一番上へ`, 'info');
-  }else{
-    slotObj.stack.unshift(moved);
-    if(typeof simLog === 'function') simLog(`▶ 「${moved.detail?.name||'?'}」トラッシュ→スロット${slot+1}の一番下へ`, 'info');
-  }
-
-  window.pendingGraveTargetAction = null;
-  GS.selHand = null;
-  if(typeof simRenderAll === 'function') simRenderAll();
-  if(typeof updatePendingTargetBar === 'function') updatePendingTargetBar();
-  if(typeof toast === 'function') toast('トラッシュから配置しました');
-  return true;
-}
-
-function clearPendingTargetActions(){
-  window.pendingRevealTargetAction = null;
-  window.pendingGraveTargetAction = null;
-
-  if(window.pendingPeekTargetAction && window.pendingPeekTargetAction.card){
-    const p = window.pendingPeekTargetAction;
-    const arr = p.type==='deck' ? GS.deckMy : GS.graveMy;
-    const restoreIdx = Math.max(0, Math.min(p.sourceIndex ?? arr.length, arr.length));
-    arr.splice(restoreIdx, 0, p.card);
-  }
-  if(window.pendingChargeTopTargetAction && window.pendingChargeTopTargetAction.card){
-    const p = window.pendingChargeTopTargetAction;
-    const slotObj = GS.fieldMy[p.sourceSlot];
-    if(slotObj){
-      if(!slotObj.chargeStack) slotObj.chargeStack = [];
-      const restoreIdx = Math.max(0, Math.min(p.sourceIndex ?? slotObj.chargeStack.length, slotObj.chargeStack.length));
-      slotObj.chargeStack.splice(restoreIdx, 0, p.card);
-    }
-  }
-
-  window.pendingPeekTargetAction = null;
-  window.pendingChargeTopTargetAction = null;
-  if(window.GS){
-    GS.selHand = null;
-    if(typeof simRenderAll === 'function') simRenderAll();
-  }
-  if(typeof updatePendingTargetBar === 'function') updatePendingTargetBar();
-  if(typeof toast === 'function') toast('置き先選択をキャンセルしました');
-}
-</script>
 
 </body>
 </html>
